@@ -1,13 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-
-export type UserDocument = User & Document;
+import { Types } from 'mongoose';
 
 @Schema({
   timestamps: true,
   autoCreate: true,
   autoIndex: true,
 })
-export class User {
+export class User extends Document {
+  @Prop()
+  _id: Types.ObjectId;
+
   @Prop({
     required: true,
   })
@@ -23,6 +25,9 @@ export class User {
     required: true,
   })
   password: string;
+
+  // @Prop() 
+  // refreshToken?: string;
 
   @Prop({
     type: Date,

@@ -1,13 +1,13 @@
 import * as bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from './schema/user.schema';
+import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { UserCreateDto, UserUpdateDto } from './user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
   /**
    * Creates a new user.
    *
