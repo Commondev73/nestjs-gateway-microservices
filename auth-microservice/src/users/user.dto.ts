@@ -1,32 +1,38 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { Length } from 'class-validator';
+import {  IsNotEmpty, IsString, Length } from 'class-validator';
 
 
 /**
- * CreateUserDto
+ * Create User Dto
  *
  * @export
- * @class CreateUserDto
- * @typedef {CreateUserDto}
+ * @class UserCreateDto
+ * @typedef {UserCreateDto}
  */
-export class CreateUserDto {
-  @Length(1, 200)
+export class UserCreateDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
   readonly name: string;
 
-  @Length(1, 50)
-  readonly username: number;
-
+  @IsString()
+  @IsNotEmpty()
   @Length(1, 100)
+  readonly username: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(8, 100)
   readonly password: string;
 }
 
 
 /**
- * UpdateUserDto
+ * User Update Dto
  *
  * @export
- * @class UpdateUserDto
- * @typedef {UpdateUserDto}
- * @extends {PartialType(CreateUserDto)}
+ * @class UserUpdateDto
+ * @typedef {UserUpdateDto}
+ * @extends {PartialType(UserCreateDto)}
  */
-export class UpdateUserDto extends PartialType(CreateUserDto) {}
+export class UserUpdateDto extends PartialType(UserCreateDto) {}
