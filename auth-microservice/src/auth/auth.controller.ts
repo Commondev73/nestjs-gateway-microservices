@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
 import { AuthLoginDto } from './auth.dto';
 import { UserCreateDto } from 'src/users/user.dto';
+import { Public } from 'src/common/public.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,7 @@ export class AuthController {
    * @param authLoginBodyDto
    * @returns {Promise<{accessToken: string, refreshToken: string}>}
    */
+  @Public()
   @Post('login')
   async login(@Body() authLoginDto: AuthLoginDto) {
     const { username, password } = authLoginDto;
@@ -38,8 +40,17 @@ export class AuthController {
     return { accessToken, refreshToken };
   }
 
+  
+  /**
+   * Refresh token
+   *
+   * @async
+   * @param {string} oldRefreshToken
+   * @returns {Promise<{accessToken: string, refreshToken: string}>}
+   */
+  @Public()
   @Post('refresh-token')
-  async refreshToken(@Body('refreshToken') oldRefreshToken: string) {
+  async refreshToken(@Body('refreshToken') oldRefreshToken: string) : Promise<{accessToken: string, refreshToken: string}> {
     const tokens = await this.authService.refreshToken(oldRefreshToken);
     return tokens;
   }
