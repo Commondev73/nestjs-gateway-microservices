@@ -8,86 +8,107 @@ import { UserCreateDto, UserUpdateDto } from './user.dto';
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+
   /**
-   * Creates a new user.
+   * Creates a new user in the database.
    *
-   * @param userCreateDto User data to be stored.
-   * @returns The created user.
+   * Hashes the user's password and saves the user to the database.
+   * Returns the created user with the password field removed.
+   *
+   * @param {UserCreateDto} userCreateDto - The data transfer object containing user information.
+   * @returns {Promise<Partial<User>>} A promise that resolves to the created user object without the password.
    */
-  async create(userCreateDto: UserCreateDto): Promise<User> {
+  async create(userCreateDto: UserCreateDto): Promise<Partial<User>> {
     const user = {
       ...userCreateDto,
       password: await this.hashPassword(userCreateDto.password),
-    }
+    };
 
     const createdUser = new this.userModel(user);
-    return createdUser.save();
+    const savedUser = await createdUser.save();
+
+    return this.removePassword(savedUser);
   }
 
   /**
-   * Retrieves all users.
+   * Retrieves all users from the database.
    *
-   * @returns Array of users.
+   * @returns {Promise<Partial<User>[]>} An array of users without their password fields.
    */
-  async findAll(): Promise<User[]> {
-    return this.userModel.find().exec();
+  async findAll(): Promise<Partial<User>[]> {
+    const users = await this.userModel.find().exec();
+    return users.map((user) => this.removePassword(user));
   }
 
   /**
    * Retrieves a user by their id.
    *
-   * @param id The user id.
-   * @returns The user with the given id.
+   * @param {string} id The user id.
+   * @returns {Promise<Partial<User>>} The user with the given id without the password field.
+   * @throws {NotFoundException} If no user is found.
    */
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<Partial<User>> {
     const user = await this.userModel.findById(id).exec();
 
-    if (!user) { 
+    if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    return this.removePassword(user);
   }
 
   /**
    * Retrieves a user by their username.
    *
-   * @param username The user username.
-   * @returns The user with the given username.
+   * @param {string} username The username to search for.
+   * @returns {Promise<Partial<User>>} The user with the given username without the password field.
+   * @throws {NotFoundException} If no user is found.
    */
-  async findUsername(username: string): Promise<User> {
+  async findUsername(username: string): Promise<Partial<User>> {
     const user = await this.userModel.findOne({ username }).exec();
 
-    if (!user) { 
+    if (!user) {
       throw new NotFoundException('User not found');
     }
-    
-    return user;
+
+    return this.removePassword(user);
   }
 
   /**
-   * Updates a user by their id.
+   * Updates a user's information.
    *
    * @param id The user id.
-   * @param userUpdateDto User data to be updated.
-   * @returns The updated user.
+   * @param userUpdateDto The data to update the user with.
+   * @returns {Promise<Partial<User>>} The updated user without the password field.
+   * @throws {NotFoundException} If the user with the given id is not found.
    */
-  async update(id: string, userUpdateDto: UserUpdateDto): Promise<User> {
-    const user = await this.userModel
+  async update(
+    id: string,
+    userUpdateDto: UserUpdateDto,
+  ): Promise<Partial<User>> {
+    const updatedUser = await this.userModel
       .findByIdAndUpdate(id, userUpdateDto, { new: true })
       .exec();
-    return user;
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.removePassword(updatedUser);
   }
 
   /**
    * Deletes a user by their id.
    *
-   * @param id The user id.
-   * @returns The deleted user.
+   * @param {string} id The user id.
+   * @returns {Promise<void>} A promise that resolves when the user is deleted.
+   * @throws {NotFoundException} If no user is found with the given id.
    */
-  async delete(id: string): Promise<User> {
+  async delete(id: string): Promise<void> {
     const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
-    return deletedUser;
+    if (!deletedUser) {
+      throw new NotFoundException('User not found');
+    }
   }
 
   /**
@@ -100,5 +121,17 @@ export class UsersService {
   async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt();
     return bcrypt.hash(password, salt);
+  }
+
+  /**
+   * Removes the password field from a user object.
+   *
+   * @param {User} user The user object to remove the password from.
+   * @returns {Partial<User>} The user object with the password removed.
+   * @private
+   */
+  private removePassword(user: User): Partial<User> {
+    const { password, ...result } = user;
+    return result;
   }
 }
