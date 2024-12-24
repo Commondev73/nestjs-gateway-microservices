@@ -27,7 +27,7 @@ export class UsersService {
     const createdUser = new this.userModel(user);
     const savedUser = await createdUser.save();
 
-    return this.removePassword(savedUser);
+    return this.removePassword(savedUser.toObject());
   }
 
   /**
@@ -37,7 +37,7 @@ export class UsersService {
    */
   async findAll(): Promise<Partial<User>[]> {
     const users = await this.userModel.find().exec();
-    return users.map((user) => this.removePassword(user));
+    return users.map((user) => this.removePassword(user.toObject()));
   }
 
   /**
@@ -54,15 +54,15 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.removePassword(user);
+    return this.removePassword(user.toObject());
   }
 
   /**
    * Retrieves a user by their username.
    *
-   * @param {string} username The username to search for.
-   * @returns {Promise<Partial<User>>} The user with the given username without the password field.
-   * @throws {NotFoundException} If no user is found.
+   * @param {string} username The username of the user.
+   * @returns {Promise<Partial<User>>} The user with the given username.
+   * @throws {NotFoundException} If no user is found with the given username.
    */
   async findUsername(username: string): Promise<Partial<User>> {
     const user = await this.userModel.findOne({ username }).exec();
@@ -71,7 +71,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.removePassword(user);
+    return user.toObject();
   }
 
   /**
@@ -94,7 +94,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.removePassword(updatedUser);
+    return this.removePassword(updatedUser.toObject());
   }
 
   /**
