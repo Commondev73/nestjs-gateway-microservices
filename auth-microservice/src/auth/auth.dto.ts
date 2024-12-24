@@ -22,7 +22,19 @@ export class AuthLoginDto {
   readonly password: string;  
 }
 
-
+/**
+ * Auth Refresh Token Dto
+ *
+ * @export
+ * @class AuthRefreshTokenDto
+ * @typedef {AuthRefreshTokenDto}
+ */
+export class AuthRefreshTokenDto {
+  @ApiProperty({ example: 'refreshToken', description: 'The refresh token of the user' })
+  @IsString()
+  @IsNotEmpty()
+  readonly refreshToken: string;
+}
 
 /**
  * Auth Login Response Dto

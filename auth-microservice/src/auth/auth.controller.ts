@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
-import { AuthLoginDto, AuthLoginResponseDto } from './auth.dto';
+import { AuthLoginDto, AuthLoginResponseDto, AuthRefreshTokenDto } from './auth.dto';
 import { UserCreateDto } from 'src/users/user.dto';
 import { Public } from 'src/common/public.decorator';
 import {
@@ -93,9 +93,10 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Authentication failed' })
   async refreshToken(
-    @Body('refreshToken') oldRefreshToken: string,
+    @Body() authRefreshTokenDto: AuthRefreshTokenDto,
   ): Promise<AuthLoginResponseDto> {
     try {
+      const { refreshToken: oldRefreshToken } = authRefreshTokenDto;
       const tokens = await this.authService.refreshToken(oldRefreshToken);
       return tokens;
     } catch (error) {
