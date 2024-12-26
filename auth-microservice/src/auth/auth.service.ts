@@ -109,9 +109,6 @@ export class AuthService {
 
       return user;
     } catch (error) {
-      // if (error instanceof NotFoundException) {
-      //   throw error;
-      // }
       throw new InternalServerErrorException('Failed to validate user');
     }
   }
