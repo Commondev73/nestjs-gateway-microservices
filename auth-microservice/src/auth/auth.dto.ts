@@ -35,18 +35,3 @@ export class AuthRefreshTokenDto {
   @IsNotEmpty()
   readonly refreshToken: string;
 }
-
-/**
- * Auth Login Response Dto
- *
- * @export
- * @class AuthLoginResponseDto
- * @typedef {AuthLoginResponseDto}
- */
-export class AuthLoginResponseDto {
-  @ApiProperty({ example: 'accessToken', description: 'JWT Access Token' })
-  accessToken: string;
-
-  @ApiProperty({ example: 'refreshToken', description: 'JWT Refresh Token' })
-  refreshToken: string;
-}

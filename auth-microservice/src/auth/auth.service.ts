@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/schema/user.schema';
 import { UsersService } from 'src/users/users.service';
+import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
+import { AuthJwtToken } from 'src/common/Interfaces/auth.interface';
 
 @Injectable()
 export class AuthService {
@@ -17,10 +19,10 @@ export class AuthService {
    * Generate Access Token
    *
    * @async
-   * @param {User} user
+   * @param {UserWithoutPassword} user
    * @returns {Promise<string>}
    */
-  async generateAccessToken(user: User): Promise<string> {
+  async generateAccessToken(user: UserWithoutPassword): Promise<string> {
     const payload = { username: user.name, sub: user._id };
     return this.jwtService.sign(payload, {
       expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
@@ -31,10 +33,10 @@ export class AuthService {
    * Generate Refresh Token
    *
    * @async
-   * @param {User} user
+   * @param {UserWithoutPassword} user
    * @returns {Promise<string>}
    */
-  async generateRefreshToken(user: User): Promise<string> {
+  async generateRefreshToken(user: UserWithoutPassword): Promise<string> {
     const payload = { username: user.name, sub: user._id };
     return this.jwtService.sign(payload, {
       expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
@@ -43,7 +45,7 @@ export class AuthService {
 
   async refreshToken(
     oldRefreshToken: string,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<AuthJwtToken> {
     const payload = this.jwtService.verify(oldRefreshToken);
     const user = await this.userServive.findOne(payload.sub);
     if (user) {
@@ -63,11 +65,18 @@ export class AuthService {
    * @param {string} password
    * @returns {Promise<User | null>}
    */
-  async validateUser(username: string, password: string): Promise<User | null> {
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<Partial<User> | null> {
     const user = await this.userServive.findUsername(username);
-    if (user && (await bcrypt.compare(password, user.password))) {
+
+    const checkPass = await bcrypt.compare(password, user.password);
+
+    if (user && checkPass) {
       return user;
     }
+
     return null;
   }
 }

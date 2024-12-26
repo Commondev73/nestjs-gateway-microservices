@@ -8,16 +8,20 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
-import { AuthLoginDto, AuthLoginResponseDto, AuthRefreshTokenDto } from './auth.dto';
+import {
+  AuthLoginDto,
+  AuthRefreshTokenDto,
+} from './auth.dto';
 import { UserCreateDto } from 'src/users/user.dto';
-import { Public } from 'src/common/public.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { User } from 'src/users/schema/user.schema';
+import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
+import { AuthJwtToken } from 'src/common/Interfaces/auth.interface';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -33,9 +37,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: 'The user has been successfully created.',
-    type: Promise<{ message: string }>,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
   async register(
     @Body() userCreateDto: UserCreateDto,
   ): Promise<{ message: string }> {
@@ -47,21 +49,15 @@ export class AuthController {
    * Login user
    *
    * @param authLoginBodyDto
-   * @returns {Promise<AuthLoginResponseDto>}
+   * @returns {Promise<AuthJwtToken>}
    */
   @Public()
   @Post('login')
   @ApiOperation({ summary: 'Login and get JWT token' })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-    type: AuthLoginResponseDto,
-  })
-  @ApiResponse({ status: 401, description: 'Authentication failed' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
   async login(
     @Body() authLoginDto: AuthLoginDto,
-  ): Promise<AuthLoginResponseDto> {
-    
+  ): Promise<AuthJwtToken> {
     const { username, password } = authLoginDto;
 
     const user = await this.authService.validateUser(username, password);
@@ -81,20 +77,15 @@ export class AuthController {
    *
    * @async
    * @param {string} oldRefreshToken
-   * @returns {Promise<AuthLoginResponseDto>}
+   * @returns {Promise<AuthJwtToken>}
    */
   @Public()
   @Post('refresh-token')
   @ApiOperation({ summary: 'Refresh JWT token' })
-  @ApiResponse({
-    status: 200,
-    description: 'Token refresh successful',
-    type: AuthLoginResponseDto,
-  })
-  @ApiResponse({ status: 401, description: 'Authentication failed' })
+  @ApiResponse({ status: 200, description: 'Token refresh successful' })
   async refreshToken(
     @Body() authRefreshTokenDto: AuthRefreshTokenDto,
-  ): Promise<AuthLoginResponseDto> {
+  ): Promise<AuthJwtToken> {
     try {
       const { refreshToken: oldRefreshToken } = authRefreshTokenDto;
       const tokens = await this.authService.refreshToken(oldRefreshToken);
@@ -109,14 +100,13 @@ export class AuthController {
    *
    * @async
    * @param {*} req
-   * @returns {Promise<Partial<User>>}
+   * @returns {Promise<UserWithoutPassword>}
    */
   @Get('profile')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user profile' })
-  @ApiResponse({ status: 200, description: 'User profile data', type: User })
-  @ApiResponse({ status: 401, description: 'Authentication failed' })
-  async getProfile(@Req() req): Promise<Partial<User>> {
+  @ApiResponse({ status: 200, description: 'User profile data' })
+  async getProfile(@Req() req): Promise<UserWithoutPassword> {
     const userId = req.user.userId;
     return this.userService.findOne(userId);
   }

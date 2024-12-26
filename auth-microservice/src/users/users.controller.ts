@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UserCreateDto, UserUpdateDto } from './user.dto';
-import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { User } from './schema/user.schema';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
 
 @Controller('users')
 export class UsersController {
@@ -20,7 +20,7 @@ export class UsersController {
    * Creates a new user.
    *
    * @param {UserCreateDto} userCreateDto
-   * @returns {Promise<Partial<User>[]>}
+   * @returns {Promise<UserWithoutPassword>}
    */
   @Post()
   @ApiBearerAuth()
@@ -28,22 +28,21 @@ export class UsersController {
   @ApiResponse({
     status: 201,
     description: 'The user has been successfully created.',
-    type: User,
   })
-  create(@Body() userCreateDto: UserCreateDto): Promise<Partial<User>> {
+  create(@Body() userCreateDto: UserCreateDto): Promise<UserWithoutPassword> {
     return this.usersService.create(userCreateDto);
   }
 
   /**
    * Retrieves all users.
    *
-   * @returns {Promise<Partial<User>[]>}
+   * @returns {Promise<Partial<UserWithoutPassword>[]>}
    */
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users' })
-  @ApiResponse({ status: 200, description: 'All user data', type: [User] })
-  findAll(): Promise<Partial<User>[]> {
+  @ApiResponse({ status: 200, description: 'All user data' })
+  findAll(): Promise<Partial<UserWithoutPassword>[]> {
     return this.usersService.findAll();
   }
 
@@ -51,13 +50,14 @@ export class UsersController {
    * Retrieves a user by its ID.
    *
    * @param {string} id
-   * @returns {Promise<Partial<User>>}
+   * @returns {Promise<UserWithoutPassword>}
    */
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'The user data', type: User })
-  findOne(@Param('id') id: string): Promise<Partial<User>> {
+  @ApiQuery({ name: 'id', required: true })
+  @ApiResponse({ status: 200, description: 'The user data' })
+  findOne(@Param('id') id: string): Promise<UserWithoutPassword> {
     return this.usersService.findOne(id);
   }
 
@@ -67,17 +67,20 @@ export class UsersController {
    * @async
    * @param {string} id
    * @param {UserUpdateDto} userUpdateDto
-   * @returns {Promise<Partial<User>>}
+   * @returns {Promise<UserWithoutPassword>}
    */
   @Put(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a user' })
+  @ApiQuery({ name: 'id', required: true})
   @ApiResponse({
     status: 200,
     description: 'The user has been successfully updated.',
-    type: User,
   })
-  async update(@Param('id') id: string, @Body() userUpdateDto: UserUpdateDto): Promise<Partial<User>> {
+  async update(
+    @Param('id') id: string,
+    @Body() userUpdateDto: UserUpdateDto,
+  ): Promise<UserWithoutPassword> {
     return this.usersService.update(id, userUpdateDto);
   }
 
@@ -90,6 +93,7 @@ export class UsersController {
    */
   @Delete(':id')
   @ApiBearerAuth()
+  @ApiQuery({ name: 'id', required: true })
   @ApiOperation({ summary: 'Delete a user' })
   @ApiResponse({
     status: 204,

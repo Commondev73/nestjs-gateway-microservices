@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { UserCreateDto, UserUpdateDto } from './user.dto';
+import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
 
 @Injectable()
 export class UsersService {
@@ -16,9 +17,9 @@ export class UsersService {
    * Returns the created user with the password field removed.
    *
    * @param {UserCreateDto} userCreateDto - The data transfer object containing user information.
-   * @returns {Promise<Partial<User>>} A promise that resolves to the created user object without the password.
+   * @returns {Promise<UserWithoutPassword>} A promise that resolves to the created user object without the password.
    */
-  async create(userCreateDto: UserCreateDto): Promise<Partial<User>> {
+  async create(userCreateDto: UserCreateDto): Promise<UserWithoutPassword> {
     const user = {
       ...userCreateDto,
       password: await this.hashPassword(userCreateDto.password),
@@ -33,9 +34,9 @@ export class UsersService {
   /**
    * Retrieves all users from the database.
    *
-   * @returns {Promise<Partial<User>[]>} An array of users without their password fields.
+   * @returns {Promise<UserWithoutPassword[]>} An array of users without their password fields.
    */
-  async findAll(): Promise<Partial<User>[]> {
+  async findAll(): Promise<UserWithoutPassword[]> {
     const users = await this.userModel.find().exec();
     return users.map((user) => this.removePassword(user.toObject()));
   }
@@ -44,10 +45,10 @@ export class UsersService {
    * Retrieves a user by their id.
    *
    * @param {string} id The user id.
-   * @returns {Promise<Partial<User>>} The user with the given id without the password field.
+   * @returns {Promise<UserWithoutPassword>} The user with the given id without the password field.
    * @throws {NotFoundException} If no user is found.
    */
-  async findOne(id: string): Promise<Partial<User>> {
+  async findOne(id: string): Promise<UserWithoutPassword> {
     const user = await this.userModel.findById(id).exec();
 
     if (!user) {
@@ -61,10 +62,10 @@ export class UsersService {
    * Retrieves a user by their username.
    *
    * @param {string} username The username of the user.
-   * @returns {Promise<Partial<User>>} The user with the given username.
+   * @returns {Promise<User>} The user with the given username.
    * @throws {NotFoundException} If no user is found with the given username.
    */
-  async findUsername(username: string): Promise<Partial<User>> {
+  async findUsername(username: string): Promise<User> {
     const user = await this.userModel.findOne({ username }).exec();
 
     if (!user) {
@@ -79,13 +80,13 @@ export class UsersService {
    *
    * @param id The user id.
    * @param userUpdateDto The data to update the user with.
-   * @returns {Promise<Partial<User>>} The updated user without the password field.
+   * @returns {Promise<UserWithoutPassword>} The updated user without the password field.
    * @throws {NotFoundException} If the user with the given id is not found.
    */
   async update(
     id: string,
     userUpdateDto: UserUpdateDto,
-  ): Promise<Partial<User>> {
+  ): Promise<UserWithoutPassword> {
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, userUpdateDto, { new: true })
       .exec();
@@ -127,10 +128,10 @@ export class UsersService {
    * Removes the password field from a user object.
    *
    * @param {User} user The user object to remove the password from.
-   * @returns {Partial<User>} The user object with the password removed.
+   * @returns {UserWithoutPassword} The user object with the password removed.
    * @private
    */
-  private removePassword(user: User): Partial<User> {
+  private removePassword(user: User): UserWithoutPassword {
     const { password, ...result } = user;
     return result;
   }

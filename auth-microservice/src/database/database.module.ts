@@ -12,7 +12,8 @@ import { MongooseModule } from '@nestjs/mongoose';
         const host = configService.get<string>('MONGO_HOST');
         const port = configService.get<string>('MONGO_PORT');
         return {
-          uri: `mongodb://${username}:${password}@${host}:${port}`,
+          // uri: `mongodb://${username}:${password}@${host}:${port}`,
+          uri: `mongodb://${host}:${port}`,
           dbName: database,
           useNewUrlParser: true,
           useUnifiedTopology: true,
