@@ -10,7 +10,7 @@ import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }), //  Make ConfigModule a module that can be used throughout the application.
+    ConfigModule.forRoot({ envFilePath: `.env.${process.env.NODE_ENV}`, isGlobal: true }), //  Make ConfigModule a module that can be used throughout the application.
     DatabaseModule,
     UsersModule,
     AuthModule,
