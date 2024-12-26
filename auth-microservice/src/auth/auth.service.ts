@@ -1,5 +1,10 @@
 import * as bcrypt from 'bcrypt';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/users/schema/user.schema';
@@ -23,10 +28,14 @@ export class AuthService {
    * @returns {Promise<string>}
    */
   async generateAccessToken(user: UserWithoutPassword): Promise<string> {
-    const payload = { username: user.name, sub: user._id };
-    return this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
-    });
+    try {
+      const payload = { username: user.name, sub: user._id };
+      return this.jwtService.sign(payload, {
+        expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to generate token');
+    }
   }
 
   /**
@@ -37,23 +46,43 @@ export class AuthService {
    * @returns {Promise<string>}
    */
   async generateRefreshToken(user: UserWithoutPassword): Promise<string> {
-    const payload = { username: user.name, sub: user._id };
-    return this.jwtService.sign(payload, {
-      expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
-    });
+    try {
+      const payload = { username: user.name, sub: user._id };
+      return this.jwtService.sign(payload, {
+        expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
+      });
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to generate refresh token',
+      );
+    }
   }
 
-  async refreshToken(
-    oldRefreshToken: string,
-  ): Promise<AuthJwtToken> {
-    const payload = this.jwtService.verify(oldRefreshToken);
-    const user = await this.userServive.findOne(payload.sub);
-    if (user) {
+  /**
+   * Generate Access and Refresh Token
+   *
+   * @async
+   * @param {string} oldRefreshToken
+   * @returns {Promise<AuthJwtToken>}
+   */
+  async refreshToken(oldRefreshToken: string): Promise<AuthJwtToken> {
+    try {
+      const payload = this.jwtService.verify(oldRefreshToken);
+      const user = await this.userServive.findOne(payload.sub);
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
       const accessToken = await this.generateAccessToken(user);
       const refreshToken = await this.generateRefreshToken(user);
+
       return { accessToken, refreshToken };
-    } else {
-      throw new Error('Invalid refresh token');
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to refresh token');
     }
   }
 
@@ -69,14 +98,21 @@ export class AuthService {
     username: string,
     password: string,
   ): Promise<Partial<User> | null> {
-    const user = await this.userServive.findUsername(username);
+    try {
+      const user = await this.userServive.findUsername(username);
 
-    const checkPass = await bcrypt.compare(password, user.password);
+      const checkPass = await bcrypt.compare(password, user.password);
 
-    if (user && checkPass) {
+      if (!user || !checkPass) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
       return user;
+    } catch (error) {
+      // if (error instanceof NotFoundException) {
+      //   throw error;
+      // }
+      throw new InternalServerErrorException('Failed to validate user');
     }
-
-    return null;
   }
 }

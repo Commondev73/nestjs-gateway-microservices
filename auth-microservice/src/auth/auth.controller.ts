@@ -2,16 +2,14 @@ import {
   Body,
   Controller,
   Get,
+  InternalServerErrorException,
   Post,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from 'src/users/users.service';
-import {
-  AuthLoginDto,
-  AuthRefreshTokenDto,
-} from './auth.dto';
+import { AuthLoginDto, AuthRefreshTokenDto } from './auth.dto';
 import { UserCreateDto } from 'src/users/user.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 import {
@@ -31,6 +29,13 @@ export class AuthController {
     private readonly userService: UsersService,
   ) {}
 
+  /**
+   * Create a new user
+   *
+   * @async
+   * @param {UserCreateDto} userCreateDto
+   * @returns {Promise<{ message: string }>}
+   */
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Create a new user' })
@@ -55,9 +60,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Login and get JWT token' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  async login(
-    @Body() authLoginDto: AuthLoginDto,
-  ): Promise<AuthJwtToken> {
+  async login(@Body() authLoginDto: AuthLoginDto): Promise<AuthJwtToken> {
     const { username, password } = authLoginDto;
 
     const user = await this.authService.validateUser(username, password);
@@ -86,13 +89,9 @@ export class AuthController {
   async refreshToken(
     @Body() authRefreshTokenDto: AuthRefreshTokenDto,
   ): Promise<AuthJwtToken> {
-    try {
-      const { refreshToken: oldRefreshToken } = authRefreshTokenDto;
-      const tokens = await this.authService.refreshToken(oldRefreshToken);
-      return tokens;
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    const { refreshToken: oldRefreshToken } = authRefreshTokenDto;
+    const tokens = await this.authService.refreshToken(oldRefreshToken);
+    return tokens;
   }
 
   /**

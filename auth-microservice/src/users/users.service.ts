@@ -1,5 +1,9 @@
 import * as bcrypt from 'bcrypt';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
@@ -20,15 +24,24 @@ export class UsersService {
    * @returns {Promise<UserWithoutPassword>} A promise that resolves to the created user object without the password.
    */
   async create(userCreateDto: UserCreateDto): Promise<UserWithoutPassword> {
-    const user = {
-      ...userCreateDto,
-      password: await this.hashPassword(userCreateDto.password),
-    };
-
-    const createdUser = new this.userModel(user);
-    const savedUser = await createdUser.save();
-
-    return this.removePassword(savedUser.toObject());
+    try {
+      const user = {
+        ...userCreateDto,
+        password: await this.hashPassword(userCreateDto.password),
+      };
+  
+      const createdUser = new this.userModel(user);
+      const savedUser = await createdUser.save();
+  
+      return this.removePassword(savedUser.toObject());
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to create user',
+      );
+    }
   }
 
   /**
@@ -49,13 +62,22 @@ export class UsersService {
    * @throws {NotFoundException} If no user is found.
    */
   async findOne(id: string): Promise<UserWithoutPassword> {
-    const user = await this.userModel.findById(id).exec();
+    try {
+      const user = await this.userModel.findById(id).exec();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return this.removePassword(user.toObject());
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to find user',
+      );
     }
-
-    return this.removePassword(user.toObject());
   }
 
   /**
@@ -66,13 +88,22 @@ export class UsersService {
    * @throws {NotFoundException} If no user is found with the given username.
    */
   async findUsername(username: string): Promise<User> {
-    const user = await this.userModel.findOne({ username }).exec();
+    try {
+      const user = await this.userModel.findOne({ username }).exec();
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user.toObject();
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to find user',
+      );
     }
-
-    return user.toObject();
   }
 
   /**
@@ -87,15 +118,24 @@ export class UsersService {
     id: string,
     userUpdateDto: UserUpdateDto,
   ): Promise<UserWithoutPassword> {
-    const updatedUser = await this.userModel
-      .findByIdAndUpdate(id, userUpdateDto, { new: true })
-      .exec();
+    try {
+      const updatedUser = await this.userModel
+        .findByIdAndUpdate(id, userUpdateDto, { new: true })
+        .exec();
 
-    if (!updatedUser) {
-      throw new NotFoundException('User not found');
+      if (!updatedUser) {
+        throw new NotFoundException('User not found');
+      }
+
+      return this.removePassword(updatedUser.toObject());
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to update user',
+      );
     }
-
-    return this.removePassword(updatedUser.toObject());
   }
 
   /**
@@ -106,9 +146,18 @@ export class UsersService {
    * @throws {NotFoundException} If no user is found with the given id.
    */
   async delete(id: string): Promise<void> {
-    const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
-    if (!deletedUser) {
-      throw new NotFoundException('User not found');
+    try {
+      const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
+      if (!deletedUser) {
+        throw new NotFoundException('User not found ');
+      }
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Failed to delete user',
+      );
     }
   }
 
