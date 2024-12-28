@@ -1,3 +1,4 @@
+import * as cookieParser from 'cookie-parser';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -9,6 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // CORS
+  app.enableCors({
+    origin: [''],
+    credentials: true,
+  });
+
+  // Cookie parser
+  app.use(cookieParser());
+
   // Global validation DTO (Data Transfer Object)
   app.useGlobalPipes(new ValidationPipe());
 
@@ -16,7 +26,7 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new JwtAuthGuard(reflector));
 
-  // Swagger 
+  // Swagger
   if (configService.get('NODE_ENV') === 'development') {
     // Documentation Swagger
     const config = new DocumentBuilder()

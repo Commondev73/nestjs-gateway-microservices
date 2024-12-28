@@ -21,17 +21,3 @@ export class AuthLoginDto {
   @Length(8, 100)
   readonly password: string;  
 }
-
-/**
- * Auth Refresh Token Dto
- *
- * @export
- * @class AuthRefreshTokenDto
- * @typedef {AuthRefreshTokenDto}
- */
-export class AuthRefreshTokenDto {
-  @ApiProperty({ example: 'refreshToken', description: 'The refresh token of the user' })
-  @IsString()
-  @IsNotEmpty()
-  readonly refreshToken: string;
-}

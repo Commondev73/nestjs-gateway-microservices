@@ -2,7 +2,6 @@ import * as bcrypt from 'bcrypt';
 import {
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -11,6 +10,7 @@ import { User } from 'src/users/schema/user.schema';
 import { UsersService } from 'src/users/users.service';
 import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
 import { AuthJwtToken } from 'src/common/Interfaces/auth.interface';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -111,5 +111,17 @@ export class AuthService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to validate user');
     }
+  }
+
+  
+  /**
+   * Set Cookie
+   *
+   * @param {Response} res
+   * @param {string} cookieName
+   * @param {string} cookieValue
+   */
+  setCookie(res: Response, cookieName: string, cookieValue: string): void {
+    res.cookie(cookieName, cookieValue, { httpOnly: true, secure: true });
   }
 }
