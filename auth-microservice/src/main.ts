@@ -17,13 +17,11 @@ async function bootstrap() {
     },
   };
 
-  app.connectMicroservice<MicroserviceOptions>(microserviceOptions);
+  const microserviceApp = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, microserviceOptions);
 
   // Global validation DTO (Data Transfer Object)
-  app.useGlobalPipes(new ValidationPipe());
+  microserviceApp.useGlobalPipes(new ValidationPipe());
 
-  await app.startAllMicroservices();
-
-  await app.listen(configService.get<number>('APP_PORT') ?? 3001);
+  await microserviceApp.listen();
 }
 bootstrap();
