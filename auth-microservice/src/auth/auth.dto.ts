@@ -1,5 +1,28 @@
-import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, Length } from 'class-validator';
+
+/**
+ * AuthL Register Dto
+ *
+ * @export
+ * @class AuthLRegisterDto
+ * @typedef {AuthLRegisterDto}
+ */
+export class AuthLRegisterDto {
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
+  readonly name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(1, 100)
+  readonly username: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Length(8, 100)
+  readonly password: string;
+}
 
 /**
  * Auth Login Dto
@@ -9,15 +32,26 @@ import { IsNotEmpty, IsString, Length } from 'class-validator';
  * @typedef {AuthLoginDto}
  */
 export class AuthLoginDto {
-  @ApiProperty({ example: 'userTest', description: 'The username of the user' })
   @IsString()
   @IsNotEmpty()
   @Length(1, 100)
   readonly username: string;
 
-  @ApiProperty({ example: '123456789', description: 'The password of the user' })
   @IsString()
   @IsNotEmpty()
   @Length(8, 100)
   readonly password: string;  
+}
+
+/**
+ * Auth Refresh Token
+ *
+ * @export
+ * @class AuthRefreshTokenDto
+ * @typedef {AuthRefreshTokenDto}
+ */
+export class AuthRefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  readonly refreshToken: string;
 }

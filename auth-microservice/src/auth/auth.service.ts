@@ -1,33 +1,33 @@
 import * as bcrypt from 'bcrypt';
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { User } from 'src/users/schema/user.schema';
-import { UsersService } from 'src/users/users.service';
-import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
-import { AuthJwtToken } from 'src/common/Interfaces/auth.interface';
-import { Response } from 'express';
+import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
+import { ClientKafka } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { AuthLoginDto, AuthLRegisterDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @Inject('USER_SERVICE') private readonly userServiceClient: ClientKafka,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly userServive: UsersService,
   ) {}
 
   /**
    * Generate Access Token
    *
    * @async
-   * @param {UserWithoutPassword} user
+   * @param {AuthUser} user
    * @returns {Promise<string>}
    */
-  async generateAccessToken(user: UserWithoutPassword): Promise<string> {
+  async generateAccessToken(user: AuthUser): Promise<string> {
     try {
       const payload = { username: user.name, sub: user._id };
       return this.jwtService.sign(payload, {
@@ -42,10 +42,10 @@ export class AuthService {
    * Generate Refresh Token
    *
    * @async
-   * @param {UserWithoutPassword} user
+   * @param {AuthUser} user
    * @returns {Promise<string>}
    */
-  async generateRefreshToken(user: UserWithoutPassword): Promise<string> {
+  async generateRefreshToken(user: AuthUser): Promise<string> {
     try {
       const payload = { username: user.name, sub: user._id };
       return this.jwtService.sign(payload, {
@@ -68,7 +68,10 @@ export class AuthService {
   async refreshToken(oldRefreshToken: string): Promise<AuthJwtToken> {
     try {
       const payload = this.jwtService.verify(oldRefreshToken);
-      const user = await this.userServive.findOne(payload.sub);
+
+      const user = await firstValueFrom<AuthUser>(
+        this.userServiceClient.send('user_find_one', payload.sub),
+      );
 
       if (!user) {
         throw new UnauthorizedException('Invalid refresh token');
@@ -87,41 +90,49 @@ export class AuthService {
   }
 
   /**
-   * Validate User
+   * Register
    *
    * @async
-   * @param {string} username
-   * @param {string} password
-   * @returns {Promise<User | null>}
+   * @param {AuthLRegisterDto} authLRegisterDto
+   * @returns {Promise<AuthUser>}
    */
-  async validateUser(
-    username: string,
-    password: string,
-  ): Promise<Partial<User> | null> {
-    try {
-      const user = await this.userServive.findUsername(username);
+  async register(authLRegisterDto: AuthLRegisterDto): Promise<AuthUser> {
+    const newUser = await firstValueFrom<AuthUser>(
+      this.userServiceClient.send('user_create', authLRegisterDto),
+    );
 
-      const checkPass = await bcrypt.compare(password, user.password);
-
-      if (!user || !checkPass) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      return user;
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to validate user');
-    }
+    return newUser;
   }
 
   
   /**
-   * Set Cookie
+   * Validate User 
    *
-   * @param {Response} res
-   * @param {string} cookieName
-   * @param {string} cookieValue
+   * @async
+   * @param {AuthLoginDto} authLoginDto
+   * @returns {Promise<AuthUser>}
    */
-  setCookie(res: Response, cookieName: string, cookieValue: string): void {
-    res.cookie(cookieName, cookieValue, { httpOnly: true, secure: true });
+  async validateUser(authLoginDto: AuthLoginDto): Promise<AuthUser> {
+    const user = await firstValueFrom<AuthUser>(
+      this.userServiceClient.send('user_validate_login', authLoginDto),
+    );
+
+    return user;
+  }
+
+  /**
+   * Validate Token
+   *
+   * @async
+   * @param {string} token
+   * @returns {Promise<boolean>}
+   */
+  async validateToken(accessToken: string): Promise<boolean> {
+    try {
+      const decoded = this.jwtService.verify(accessToken);
+      return !!decoded;
+    } catch (error) {
+      return false;
+    }
   }
 }

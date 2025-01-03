@@ -6,7 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
-import { UsersModule } from 'src/users/users.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -21,7 +21,19 @@ import { UsersModule } from 'src/users/users.module';
       }),
       inject: [ConfigService],
     }),
-    UsersModule,
+    ClientsModule.registerAsync([
+      {
+        name: 'USER_SERVICE',
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.KAFKA,
+          options: {
+            client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],
