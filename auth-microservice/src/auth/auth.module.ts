@@ -26,7 +26,9 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.KAFKA,
           options: {
-            client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+            client: {
+              brokers: [configService.get<string>('KAFKA_BROKER')],
+            },
           },
         }),
         inject: [ConfigService],

@@ -13,9 +13,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.KAFKA,
           options: {
-            client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+            client: {
+              brokers: [configService.get<string>('KAFKA_BROKER')],
+            },
             consumer: {
-              groupId: configService.get<string>('KAFKA_CONSUMER_GROUP'),
+              groupId: configService.get<string>('KAFKA_GROUP_ID'),
             },
           },
         }),
