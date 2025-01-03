@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
@@ -79,30 +80,32 @@ export class UserService {
       );
     }
   }
-
-  /**
-   * Retrieves a user by their username.
-   *
-   * @param {string} username The username of the user.
-   * @returns {Promise<User>} The user with the given username.
-   * @throws {NotFoundException} If no user is found with the given username.
-   */
-  async findUsername(username: string): Promise<User> {
+  
+  
+   /**
+    * Validate User login
+    *
+    * @async
+    * @param {string} username
+    * @param {string} password
+    * @returns {Promise<UserWithoutPassword>}
+    */
+   async validateUser(
+    username: string,
+    password: string,
+  ): Promise<UserWithoutPassword> {
     try {
       const user = await this.userModel.findOne({ username }).exec();
 
-      if (!user) {
-        throw new NotFoundException('User not found');
+      const checkPass = await bcrypt.compare(password, user.password);
+
+      if (!user || !checkPass) {
+        throw new UnauthorizedException('Invalid credentials');
       }
 
-      return user.toObject();
+      return this.removePassword(user.toObject());
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Failed to find user',
-      );
+      throw new InternalServerErrorException('Failed to validate user');
     }
   }
 

@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserCreateDto, UserUpdateDto } from './user.dto';
+import { UserCreateDto, UserUpdateDto, UserValidateLoginDto } from './user.dto';
 import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
@@ -9,7 +9,9 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @MessagePattern('user_create')
-  create(@Payload() userCreateDto: UserCreateDto): Promise<UserWithoutPassword> {
+  create(
+    @Payload() userCreateDto: UserCreateDto,
+  ): Promise<UserWithoutPassword> {
     return this.userService.create(userCreateDto);
   }
 
@@ -19,12 +21,22 @@ export class UserController {
   }
 
   @MessagePattern('user_find_one')
-  findOne(id: string): Promise<UserWithoutPassword> {
+  findOne(@Payload() id: string): Promise<UserWithoutPassword> {
     return this.userService.findOne(id);
   }
 
+  @MessagePattern('user_validate_login')
+  validateLogin(
+    @Payload() userValidateLoginDto: UserValidateLoginDto,
+  ): Promise<UserWithoutPassword> {
+    const { username, password } = userValidateLoginDto;
+    return this.userService.validateUser(username, password);
+  }
+
   @MessagePattern('user_update')
-  async update(@Payload() data: { id: string; userUpdateDto: UserUpdateDto }): Promise<UserWithoutPassword> {
+  async update(
+    @Payload() data: { id: string; userUpdateDto: UserUpdateDto },
+  ): Promise<UserWithoutPassword> {
     return this.userService.update(data.id, data.userUpdateDto);
   }
 
