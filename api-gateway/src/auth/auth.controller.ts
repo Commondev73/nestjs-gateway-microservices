@@ -1,5 +1,4 @@
-import { Body, Controller, Inject, Post, Res } from '@nestjs/common';
-import { ClientKafka } from '@nestjs/microservices';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
@@ -10,31 +9,21 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authServiceClient: ClientKafka,
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
   ) {}
 
-  async onModuleInit() {
-    this.authServiceClient.subscribeToResponseOf('auth_register');
-    this.authServiceClient.subscribeToResponseOf('auth_login');
-    this.authServiceClient.subscribeToResponseOf('auth_refresh_token');
-    await this.authServiceClient.connect();
-  }
-
   @Public()
   @Post('register')
   async register(@Body() body) {
-    return this.authServiceClient.send('auth_register', body);
+    return await this.authService.registerUser(body);
   }
 
   @Public()
   @Post('login')
   async login(@Body() body, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.authServiceClient
-      .send('login', body)
-      .toPromise();
-
+    const { accessToken, refreshToken } =
+      await this.authService.loginUser(body);
     this.authService.setCookie(
       res,
       this.configService.get<string>('COOKIE_ACCESS_TOKEN_NAME'),
@@ -45,7 +34,6 @@ export class AuthController {
       this.configService.get<string>('COOKIE_REFRESH_TOKEN_NAME'),
       refreshToken,
     );
-
     return { message: 'Logged in successfully' };
   }
 
@@ -56,23 +44,18 @@ export class AuthController {
       res.req.cookies[
         this.configService.get<string>('COOKIE_REFRESH_TOKEN_NAME')
       ];
-
-    const { accessToken, refreshToken } = await this.authServiceClient
-      .send('auth_refresh_token', { oldRefreshToken })
-      .toPromise();
-
+    const { accessToken, refreshToken } =
+      await this.authService.refreshToken(oldRefreshToken);
     this.authService.setCookie(
       res,
       this.configService.get<string>('COOKIE_ACCESS_TOKEN_NAME'),
       accessToken,
     );
-
     this.authService.setCookie(
       res,
       this.configService.get<string>('COOKIE_REFRESH_TOKEN_NAME'),
       refreshToken,
     );
-
     return { message: 'Token refreshed' };
   }
 }

@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -13,12 +14,22 @@ import { firstValueFrom } from 'rxjs';
 import { AuthLoginDto, AuthLRegisterDto } from './auth.dto';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientKafka,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit() {
+    const replyTopics = ['user_create', 'user_validate_login'];
+
+    replyTopics.forEach((topic) =>
+      this.userServiceClient.subscribeToResponseOf(topic),
+    );
+
+    await this.userServiceClient.connect();
+  }
 
   /**
    * Generate Access Token
@@ -104,9 +115,8 @@ export class AuthService {
     return newUser;
   }
 
-  
   /**
-   * Validate User 
+   * Validate User
    *
    * @async
    * @param {AuthLoginDto} authLoginDto
