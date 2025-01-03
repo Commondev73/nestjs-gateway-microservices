@@ -11,8 +11,8 @@ import { ApiTags } from '@nestjs/swagger';
 export class AuthController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authServiceClient: ClientKafka,
-    private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly authService: AuthService,
   ) {}
 
   async onModuleInit() {

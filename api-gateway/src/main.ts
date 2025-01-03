@@ -1,5 +1,5 @@
 import * as cookieParser from 'cookie-parser';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
@@ -13,8 +13,8 @@ async function bootstrap() {
   const kafkaMicroserviceOptions: MicroserviceOptions = {
     transport: Transport.KAFKA,
     options: {
-      client: { brokers: ['localhost:9092'] },
-      consumer: { groupId: 'api-gateway-consumer' },
+      client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+      consumer: { groupId: configService.get<string>('KAFKA_GROUP_ID') },
     },
   };
 
@@ -28,7 +28,7 @@ async function bootstrap() {
 
   // Cookie parser
   app.use(cookieParser());
-
+  
   // Swagger
   if (configService.get('NODE_ENV') === 'development') {
     // Documentation Swagger
@@ -46,6 +46,6 @@ async function bootstrap() {
 
   await app.startAllMicroservices();
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(configService.get<number>('APP_PORT') ?? 3000);
 }
 bootstrap();
