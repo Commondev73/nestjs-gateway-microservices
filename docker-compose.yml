@@ -9,6 +9,7 @@ services:
     image: confluentinc/cp-zookeeper:latest
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
@@ -19,10 +20,26 @@ services:
     depends_on:
       - zookeeper
     environment:
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_LOCAL://localhost:9092,LISTENER_DOCKER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_LOCAL:PLAINTEXT,LISTENER_DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_LOCAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9092:9092"
+      - "9093:9093"
+    networks:
+      - kafka-networks
+
+  kafdrop:
+    image: 'obsidiandynamics/kafdrop'
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER_CONNECT: "kafka:9093"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    ports:
+      - "9000:9000"  
     networks:
       - kafka-networks
