@@ -21,7 +21,7 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const replyTopics = ['user_create.reply', 'user_validate_login.reply'];
+    const replyTopics = ['user_create', 'user_validate_login'];
 
     replyTopics.forEach((topic) =>
       this.userServiceClient.subscribeToResponseOf(topic),

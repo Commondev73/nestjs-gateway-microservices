@@ -11,9 +11,9 @@ export class AuthService implements OnModuleInit {
 
   async onModuleInit() {
     const replyTopics = [
-      'auth_register.reply',
-      'auth_login.reply',
-      'auth_refresh_token.reply',
+      'auth_register',
+      'auth_login',
+      'auth_refresh_token',
     ];
 
     replyTopics.forEach((topic) =>
