@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
-import { ClientKafka } from '@nestjs/microservices';
+import { ClientKafka, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthLoginDto, AuthLRegisterDto } from './auth.dto';
 
@@ -44,7 +44,7 @@ export class AuthService implements OnModuleInit {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new InternalServerErrorException('Failed to generate token');
+      throw new RpcException('Failed to generate token');
     }
   }
 
@@ -62,9 +62,7 @@ export class AuthService implements OnModuleInit {
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to generate refresh token',
-      );
+      throw new RpcException('Failed to generate refresh token');
     }
   }
 
@@ -84,7 +82,7 @@ export class AuthService implements OnModuleInit {
       );
 
       if (!user) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new RpcException('Invalid refresh token');
       }
 
       const accessToken = await this.generateAccessToken(user);
@@ -92,10 +90,10 @@ export class AuthService implements OnModuleInit {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof RpcException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to refresh token');
+      throw new RpcException('Failed to refresh token');
     }
   }
 
@@ -107,11 +105,14 @@ export class AuthService implements OnModuleInit {
    * @returns {Promise<AuthUser>}
    */
   async register(authLRegisterDto: AuthLRegisterDto): Promise<AuthUser> {
-    const newUser = await firstValueFrom<AuthUser>(
-      this.userServiceClient.send('user_create', authLRegisterDto),
-    );
-
-    return newUser;
+    try {
+      const newUser = await firstValueFrom<AuthUser>(
+        this.userServiceClient.send('user_create', authLRegisterDto),
+      );
+      return newUser;
+    } catch (error) {
+      throw new RpcException('Failed to register user');
+    }
   }
 
   /**
@@ -122,11 +123,14 @@ export class AuthService implements OnModuleInit {
    * @returns {Promise<AuthUser>}
    */
   async validateUser(authLoginDto: AuthLoginDto): Promise<AuthUser> {
-    const user = await firstValueFrom<AuthUser>(
-      this.userServiceClient.send('user_validate_login', authLoginDto),
-    );
-
-    return user;
+    try {
+      const user = await firstValueFrom<AuthUser>(
+        this.userServiceClient.send('user_validate_login', authLoginDto),
+      );
+      return user;
+    } catch (error) {
+      throw new RpcException('Failed to validate user');
+    }
   }
 
   /**

@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { AllExceptionsFilter } from './all-exceptions/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,10 +17,17 @@ async function bootstrap() {
     },
   };
 
-  const microserviceApp = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, microserviceOptions);
+  const microserviceApp =
+    await NestFactory.createMicroservice<MicroserviceOptions>(
+      AppModule,
+      microserviceOptions,
+    );
 
   // Global validation DTO (Data Transfer Object)
   microserviceApp.useGlobalPipes(new ValidationPipe());
+
+  // Global Filters Exceptions
+  microserviceApp.useGlobalFilters(new AllExceptionsFilter());
 
   await microserviceApp.listen();
 }

@@ -1,15 +1,11 @@
 import * as bcrypt from 'bcrypt';
-import {
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { UserCreateDto, UserUpdateDto } from './user.dto';
 import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class UserService {
@@ -30,18 +26,13 @@ export class UserService {
         ...userCreateDto,
         password: await this.hashPassword(userCreateDto.password),
       };
-  
+
       const createdUser = new this.userModel(user);
       const savedUser = await createdUser.save();
-  
+
       return this.removePassword(savedUser.toObject());
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Failed to create user',
-      );
+      throw new RpcException('Failed to create user');
     }
   }
 
@@ -51,8 +42,12 @@ export class UserService {
    * @returns {Promise<UserWithoutPassword[]>} An array of users without their password fields.
    */
   async findAll(): Promise<UserWithoutPassword[]> {
-    const users = await this.userModel.find().exec();
-    return users.map((user) => this.removePassword(user.toObject()));
+    try {
+      const users = await this.userModel.find().exec();
+      return users.map((user) => this.removePassword(user.toObject()));
+    } catch (error) {
+      throw new RpcException('Failed to retrieve users');
+    }
   }
 
   /**
@@ -67,30 +62,24 @@ export class UserService {
       const user = await this.userModel.findById(id).exec();
 
       if (!user) {
-        throw new NotFoundException('User not found');
+        throw new RpcException('User not found');
       }
 
       return this.removePassword(user.toObject());
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Failed to find user',
-      );
+      throw new RpcException('Failed to find user');
     }
   }
-  
-  
-   /**
-    * Validate User login
-    *
-    * @async
-    * @param {string} username
-    * @param {string} password
-    * @returns {Promise<UserWithoutPassword>}
-    */
-   async validateUser(
+
+  /**
+   * Validate User login
+   *
+   * @async
+   * @param {string} username
+   * @param {string} password
+   * @returns {Promise<UserWithoutPassword>}
+   */
+  async validateUser(
     username: string,
     password: string,
   ): Promise<UserWithoutPassword> {
@@ -100,12 +89,12 @@ export class UserService {
       const checkPass = await bcrypt.compare(password, user.password);
 
       if (!user || !checkPass) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new RpcException('Invalid credentials');
       }
 
       return this.removePassword(user.toObject());
     } catch (error) {
-      throw new InternalServerErrorException('Failed to validate user');
+      throw new RpcException('Failed to validate user');
     }
   }
 
@@ -127,17 +116,12 @@ export class UserService {
         .exec();
 
       if (!updatedUser) {
-        throw new NotFoundException('User not found');
+        throw new RpcException('User not found');
       }
 
       return this.removePassword(updatedUser.toObject());
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Failed to update user',
-      );
+      throw new RpcException('Failed to update user');
     }
   }
 
@@ -152,15 +136,10 @@ export class UserService {
     try {
       const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
       if (!deletedUser) {
-        throw new NotFoundException('User not found ');
+        throw new RpcException('User not found ');
       }
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(
-        'Failed to delete user',
-      );
+      throw new RpcException('Failed to delete user');
     }
   }
 
