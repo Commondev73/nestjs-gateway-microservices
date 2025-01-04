@@ -21,7 +21,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status: number;
     let message: string;
 
-    console.log('exception', exception instanceof RpcException);
     switch (true) {
       case exception instanceof BadRequestException:
         status = 400;
