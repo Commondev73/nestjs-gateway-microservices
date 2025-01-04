@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
@@ -38,7 +38,10 @@ export class AuthService implements OnModuleInit {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new RpcException('Failed to generate token');
+      throw new RpcException({
+        message: 'Failed to generate access token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -56,7 +59,10 @@ export class AuthService implements OnModuleInit {
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new RpcException('Failed to generate refresh token');
+      throw new RpcException({
+        message: 'Failed to generate refresh token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -76,7 +82,10 @@ export class AuthService implements OnModuleInit {
       );
 
       if (!user) {
-        throw new RpcException('Invalid refresh token');
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          status: HttpStatus.UNAUTHORIZED,
+        });
       }
 
       const accessToken = await this.generateAccessToken(user);
@@ -84,10 +93,10 @@ export class AuthService implements OnModuleInit {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      if (error instanceof RpcException) {
-        throw error;
-      }
-      throw new RpcException('Failed to refresh token');
+      throw new RpcException({
+        message: 'Failed to refresh token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -105,7 +114,7 @@ export class AuthService implements OnModuleInit {
       );
       return newUser;
     } catch (error) {
-      throw new RpcException('Failed to register user');
+      throw new RpcException(error);
     }
   }
 
@@ -123,7 +132,7 @@ export class AuthService implements OnModuleInit {
       );
       return user;
     } catch (error) {
-      throw new RpcException('Failed to validate user');
+      throw new RpcException(error);
     }
   }
 

@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schema/user.schema';
 import { Model } from 'mongoose';
@@ -32,7 +32,10 @@ export class UserService {
 
       return this.removePassword(savedUser.toObject());
     } catch (error) {
-      throw new RpcException('Failed to create user');
+      throw new RpcException({
+        message: 'Failed to create user',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -46,7 +49,10 @@ export class UserService {
       const users = await this.userModel.find().exec();
       return users.map((user) => this.removePassword(user.toObject()));
     } catch (error) {
-      throw new RpcException('Failed to retrieve users');
+      throw new RpcException({
+        message: 'Failed to retrieve users',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -62,12 +68,19 @@ export class UserService {
       const user = await this.userModel.findById(id).exec();
 
       if (!user) {
-        throw new RpcException('User not found');
+        throw new RpcException({
+          message: 'User not found',
+          status: HttpStatus.NOT_FOUND,
+        });
+        
       }
 
       return this.removePassword(user.toObject());
     } catch (error) {
-      throw new RpcException('Failed to find user');
+      throw new RpcException({
+        message: 'Failed to find user',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -89,12 +102,18 @@ export class UserService {
       const checkPass = await bcrypt.compare(password, user.password);
 
       if (!user || !checkPass) {
-        throw new RpcException('Invalid credentials');
+        throw new RpcException({
+          message: 'Invalid credentials',
+          status: HttpStatus.NOT_FOUND,
+        });
       }
 
       return this.removePassword(user.toObject());
     } catch (error) {
-      throw new RpcException('Failed to validate user');
+      throw new RpcException({
+        message: 'Failed to validate user',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -104,7 +123,7 @@ export class UserService {
    * @param id The user id.
    * @param userUpdateDto The data to update the user with.
    * @returns {Promise<UserWithoutPassword>} The updated user without the password field.
-   * @throws {NotFoundException} If the user with the given id is not found.
+   * @throws {RpcException} If the user with the given id is not found.
    */
   async update(
     id: string,
@@ -116,12 +135,18 @@ export class UserService {
         .exec();
 
       if (!updatedUser) {
-        throw new RpcException('User not found');
+        throw new RpcException({
+          message: 'User not found',
+          status: HttpStatus.NOT_FOUND,
+        });
       }
 
       return this.removePassword(updatedUser.toObject());
     } catch (error) {
-      throw new RpcException('Failed to update user');
+      throw new RpcException({
+        message: 'Failed to update user',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -130,16 +155,24 @@ export class UserService {
    *
    * @param {string} id The user id.
    * @returns {Promise<void>} A promise that resolves when the user is deleted.
-   * @throws {NotFoundException} If no user is found with the given id.
+   * @throws {RpcException} If no user is found with the given id.
    */
   async delete(id: string): Promise<void> {
     try {
       const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
+
       if (!deletedUser) {
-        throw new RpcException('User not found ');
+        throw new RpcException({
+          message: 'User not found',
+          status: HttpStatus.NOT_FOUND,
+        });
       }
+
     } catch (error) {
-      throw new RpcException('Failed to delete user');
+      throw new RpcException({
+        message: 'Failed to delete user',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 

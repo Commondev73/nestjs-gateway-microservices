@@ -1,4 +1,10 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  HttpException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import { Response } from 'express';
 import { firstValueFrom } from 'rxjs';
@@ -10,11 +16,7 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const replyTopics = [
-      'auth_register',
-      'auth_login',
-      'auth_refresh_token',
-    ];
+    const replyTopics = ['auth_register', 'auth_login', 'auth_refresh_token'];
 
     replyTopics.forEach((topic) =>
       this.authServiceClient.subscribeToResponseOf(topic),
@@ -28,13 +30,11 @@ export class AuthService implements OnModuleInit {
       this.authServiceClient.send('auth_register', body),
     );
   }
-
   async loginUser(body: any) {
     return await firstValueFrom(
       this.authServiceClient.send('auth_login', body),
     );
   }
-
   async refreshToken(oldRefreshToken: string) {
     return await firstValueFrom(
       this.authServiceClient.send('auth_refresh_token', { oldRefreshToken }),
