@@ -6,7 +6,7 @@ import {
   AuthRefreshTokenDto,
 } from './auth.dto';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
-import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
