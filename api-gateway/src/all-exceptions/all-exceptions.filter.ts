@@ -6,6 +6,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   NotFoundException,
+  HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { RpcException } from '@nestjs/microservices';
@@ -43,7 +44,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           message: string;
           status?: number;
         };
-        status = getError.status || 500;
+        status = getError.status || HttpStatus.INTERNAL_SERVER_ERROR;
         message = getError.message || 'Internal server error';
     }
 
