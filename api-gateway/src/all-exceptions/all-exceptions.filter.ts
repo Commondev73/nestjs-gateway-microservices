@@ -9,7 +9,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { RpcException } from '@nestjs/microservices';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
