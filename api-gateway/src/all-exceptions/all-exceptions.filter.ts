@@ -17,40 +17,50 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    let status: number;
-    let message: string;
-
-    switch (true) {
-      case exception instanceof BadRequestException:
-        status = 400;
-        message = (exception as BadRequestException).message;
-        break;
-      case exception instanceof UnauthorizedException:
-        status = 401;
-        message = (exception as UnauthorizedException).message;
-        break;
-      case exception instanceof NotFoundException:
-        status = 404;
-        message = (exception as NotFoundException).message;
-        break;
-      case exception instanceof HttpException:
-        status = (exception as HttpException).getStatus();
-        message = (exception as HttpException).message;
-        break;
-      default:
-        const getError = exception as {
-          message: string;
-          status?: number;
-        };
-        status = getError.status || HttpStatus.INTERNAL_SERVER_ERROR;
-        message = getError.message || 'Internal server error';
-    }
+    const { status, message } = this.getStatusAndMessage(exception);
 
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
-      message: message,
+      message,
     });
+  }
+
+  private getStatusAndMessage(exception: unknown): {
+    status: number;
+    message: string;
+  } {
+    let status: number;
+    let message: string;
+
+    switch (true) {
+      case exception instanceof BadRequestException:
+        status = HttpStatus.BAD_REQUEST;
+        message = (exception as BadRequestException).message;
+        break;
+
+      case exception instanceof UnauthorizedException:
+        status = HttpStatus.UNAUTHORIZED;
+        message = (exception as UnauthorizedException).message;
+        break;
+
+      case exception instanceof NotFoundException:
+        status = HttpStatus.NOT_FOUND;
+        message = (exception as NotFoundException).message;
+        break;
+
+      case exception instanceof HttpException:
+        status = (exception as HttpException).getStatus();
+        message = (exception as HttpException).message;
+        break;
+        
+      default:
+        const defaultError = exception as { message: string; status?: number };
+        status = defaultError.status || HttpStatus.INTERNAL_SERVER_ERROR;
+        message = defaultError.message || 'Internal server error';
+    }
+
+    return { status, message };
   }
 }
