@@ -34,6 +34,7 @@ export class AuthService implements OnModuleInit {
   async generateAccessToken(user: AuthUser): Promise<string> {
     try {
       const payload = { username: user.name, sub: user._id };
+
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
       });
@@ -55,6 +56,7 @@ export class AuthService implements OnModuleInit {
   async generateRefreshToken(user: AuthUser): Promise<string> {
     try {
       const payload = { username: user.name, sub: user._id };
+
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
       });
@@ -93,6 +95,10 @@ export class AuthService implements OnModuleInit {
 
       return { accessToken, refreshToken };
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to refresh token',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -112,6 +118,7 @@ export class AuthService implements OnModuleInit {
       const newUser = await firstValueFrom<AuthUser>(
         this.userServiceClient.send('user_create', AuthRegisterDto),
       );
+
       return newUser;
     } catch (error) {
       throw new RpcException(error);
@@ -130,6 +137,7 @@ export class AuthService implements OnModuleInit {
       const user = await firstValueFrom<AuthUser>(
         this.userServiceClient.send('user_validate_login', authLoginDto),
       );
+
       return user;
     } catch (error) {
       throw new RpcException(error);
@@ -146,6 +154,7 @@ export class AuthService implements OnModuleInit {
   async validateToken(accessToken: string): Promise<boolean> {
     try {
       const decoded = this.jwtService.verify(accessToken);
+      
       return !!decoded;
     } catch (error) {
       return false;

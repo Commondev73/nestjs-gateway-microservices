@@ -47,6 +47,7 @@ export class UserService {
   async findAll(): Promise<UserWithoutPassword[]> {
     try {
       const users = await this.userModel.find().exec();
+      
       return users.map((user) => this.removePassword(user.toObject()));
     } catch (error) {
       throw new RpcException({
@@ -76,6 +77,10 @@ export class UserService {
 
       return this.removePassword(user.toObject());
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to find user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -116,6 +121,10 @@ export class UserService {
 
       return this.removePassword(user.toObject());
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to validate user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -149,6 +158,10 @@ export class UserService {
 
       return this.removePassword(updatedUser.toObject());
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to update user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -174,6 +187,10 @@ export class UserService {
         });
       }
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to delete user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
