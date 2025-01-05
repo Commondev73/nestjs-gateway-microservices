@@ -15,7 +15,7 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const replyTopics = ['user_create', 'user_validate_login'];
+    const replyTopics = ['user_create', 'user_validate_login', 'user_find_one'];
 
     replyTopics.forEach((topic) =>
       this.userServiceClient.subscribeToResponseOf(topic),
@@ -154,7 +154,7 @@ export class AuthService implements OnModuleInit {
   async validateToken(accessToken: string): Promise<boolean> {
     try {
       const decoded = this.jwtService.verify(accessToken);
-      
+
       return !!decoded;
     } catch (error) {
       return false;
