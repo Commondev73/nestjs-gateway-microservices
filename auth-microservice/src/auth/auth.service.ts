@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
 import { ClientKafka, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { AuthLoginDto, AuthLRegisterDto } from './auth.dto';
+import { AuthLoginDto, AuthRegisterDto } from './auth.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -104,13 +104,13 @@ export class AuthService implements OnModuleInit {
    * Register
    *
    * @async
-   * @param {AuthLRegisterDto} authLRegisterDto
+   * @param {AuthRegisterDto} AuthRegisterDto
    * @returns {Promise<AuthUser>}
    */
-  async register(authLRegisterDto: AuthLRegisterDto): Promise<AuthUser> {
+  async register(AuthRegisterDto: AuthRegisterDto): Promise<AuthUser> {
     try {
       const newUser = await firstValueFrom<AuthUser>(
-        this.userServiceClient.send('user_create', authLRegisterDto),
+        this.userServiceClient.send('user_create', AuthRegisterDto),
       );
       return newUser;
     } catch (error) {

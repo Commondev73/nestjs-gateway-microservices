@@ -110,6 +110,9 @@ export class UserService {
 
       return this.removePassword(user.toObject());
     } catch (error) {
+
+      console.log(error);
+      
       throw new RpcException({
         message: 'Failed to validate user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,

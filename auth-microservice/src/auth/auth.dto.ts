@@ -4,10 +4,10 @@ import { IsNotEmpty, IsString, Length } from 'class-validator';
  * AuthL Register Dto
  *
  * @export
- * @class AuthLRegisterDto
- * @typedef {AuthLRegisterDto}
+ * @class AuthRegisterDto
+ * @typedef {AuthRegisterDto}
  */
-export class AuthLRegisterDto {
+export class AuthRegisterDto {
   @IsString()
   @IsNotEmpty()
   @Length(1, 100)
