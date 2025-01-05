@@ -72,7 +72,6 @@ export class UserService {
           message: 'User not found',
           status: HttpStatus.NOT_FOUND,
         });
-        
       }
 
       return this.removePassword(user.toObject());
@@ -99,9 +98,16 @@ export class UserService {
     try {
       const user = await this.userModel.findOne({ username }).exec();
 
-      const checkPass = await bcrypt.compare(password, user.password);
+      if (!user) {
+        throw new RpcException({
+          message: 'Invalid credentials',
+          status: HttpStatus.NOT_FOUND,
+        });
+      }
 
-      if (!user || !checkPass) {
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      
+      if (!isPasswordValid) {
         throw new RpcException({
           message: 'Invalid credentials',
           status: HttpStatus.NOT_FOUND,
@@ -110,9 +116,8 @@ export class UserService {
 
       return this.removePassword(user.toObject());
     } catch (error) {
-
       console.log(error);
-      
+
       throw new RpcException({
         message: 'Failed to validate user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -170,7 +175,6 @@ export class UserService {
           status: HttpStatus.NOT_FOUND,
         });
       }
-
     } catch (error) {
       throw new RpcException({
         message: 'Failed to delete user',
