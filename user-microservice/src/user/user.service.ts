@@ -22,9 +22,22 @@ export class UserService {
    */
   async create(userCreateDto: UserCreateDto): Promise<UserWithoutPassword> {
     try {
+      const existingUser = await this.userModel
+        .findOne({ username: userCreateDto.username })
+        .exec();
+
+      if (existingUser) {
+        throw new RpcException({
+          message: 'Username already exists',
+          status: HttpStatus.CONFLICT,
+        });
+      }
+
+      const passwordHash = await this.hashPassword(userCreateDto.password);
+
       const user = {
         ...userCreateDto,
-        password: await this.hashPassword(userCreateDto.password),
+        password: passwordHash,
       };
 
       const createdUser = new this.userModel(user);
@@ -32,6 +45,10 @@ export class UserService {
 
       return this.removePassword(savedUser.toObject());
     } catch (error) {
+      if (error instanceof RpcException) {
+        throw error;
+      }
+
       throw new RpcException({
         message: 'Failed to create user',
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -47,7 +64,7 @@ export class UserService {
   async findAll(): Promise<UserWithoutPassword[]> {
     try {
       const users = await this.userModel.find().exec();
-      
+
       return users.map((user) => this.removePassword(user.toObject()));
     } catch (error) {
       throw new RpcException({
