@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AllExceptionsFilter } from './all-exceptions/all-exceptions.filter';
@@ -18,14 +17,18 @@ async function bootstrap() {
     },
   };
 
-  const microserviceApp = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, microserviceOptions);
+  const microserviceApp =
+    await NestFactory.createMicroservice<MicroserviceOptions>(
+      AppModule,
+      microserviceOptions,
+    );
 
   // Global validation DTO (Data Transfer Object)
   microserviceApp.useGlobalPipes(new RpcValidationPipe());
 
   // Global Filters Exceptions
   microserviceApp.useGlobalFilters(new AllExceptionsFilter());
-  
+
   await microserviceApp.listen();
 }
 bootstrap();
