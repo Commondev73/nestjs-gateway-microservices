@@ -3,6 +3,8 @@ version: '3'
 networks:
   kafka-networks:
     driver: bridge
+  db-networks:
+    driver: bridge  
 
 services:
   zookeeper:
@@ -32,6 +34,7 @@ services:
     networks:
       - kafka-networks
 
+  # kafka-ui
   kafdrop:
     image: 'obsidiandynamics/kafdrop'
     depends_on:
@@ -43,3 +46,26 @@ services:
       - "9000:9000"  
     networks:
       - kafka-networks
+
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    networks:
+      - db-network  
+
+  # mongo-ui
+  mongo-express:
+    image: mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    ports:
+      - 8081:8081
+    networks:
+      - db-network 
