@@ -17,7 +17,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               brokers: [configService.get<string>('KAFKA_BROKER')],
             },
             consumer: {
-              groupId: configService.get<string>('KAFKA_GROUP_ID'),
+              groupId: configService.get<string>('KAFKA_USER_SERVICE_GROUP_ID'),
             },
           }
         }),

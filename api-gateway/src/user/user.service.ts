@@ -1,5 +1,7 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
+import { UserCreateDto, UserUpdateDto } from './user.dto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserService implements OnModuleInit {
@@ -8,7 +10,13 @@ export class UserService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const replyTopics = ['user_create', 'user_find_one'];
+    const replyTopics = [
+      'user_create',
+      'user_find_all',
+      'user_find_one',
+      'user_update',
+      'user_delete',
+    ];
 
     replyTopics.forEach((topic) =>
       this.userServiceClient.subscribeToResponseOf(topic),
@@ -17,23 +25,27 @@ export class UserService implements OnModuleInit {
     await this.userServiceClient.connect();
   }
 
-  async create(body: any) {
-    return await this.userServiceClient.send('user_create', body);
+  async create(body: UserCreateDto) {
+    return await firstValueFrom(
+      this.userServiceClient.send('user_create', body),
+    );
   }
-
   async getAll() {
-    return await this.userServiceClient.send('user_find_all', {});
+    return await firstValueFrom(
+      this.userServiceClient.send('user_find_all', {}),
+    );
   }
-
   async getById(id: string) {
-    return await this.userServiceClient.send('user_find_one', id);
+    return await firstValueFrom(
+      this.userServiceClient.send('user_find_one', id),
+    );
   }
-
-  async update(id: string, body: any) {
-    return await this.userServiceClient.send('user_update', { id, ...body });
+  async update(id: string, body: UserUpdateDto) {
+    return await firstValueFrom(
+      this.userServiceClient.send('user_update', { id, ...body }),
+    );
   }
-
   async delete(id: string) {
-    return await this.userServiceClient.send('user_delete', id);
+    return await firstValueFrom(this.userServiceClient.send('user_delete', id));
   }
 }
