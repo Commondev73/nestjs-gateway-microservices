@@ -8,6 +8,7 @@ import {
 import { ClientKafka } from '@nestjs/microservices';
 import { Response } from 'express';
 import { firstValueFrom } from 'rxjs';
+import { AuthLoginDto, AuthRegisterDto } from './auth.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -25,12 +26,12 @@ export class AuthService implements OnModuleInit {
     await this.authServiceClient.connect();
   }
 
-  async registerUser(body: any) {
+  async registerUser(body: AuthRegisterDto) {
     return await firstValueFrom(
       this.authServiceClient.send('auth_register', body),
     );
   }
-  async loginUser(body: any) {
+  async loginUser(body: AuthLoginDto) {
     return await firstValueFrom(
       this.authServiceClient.send('auth_login', body),
     );
