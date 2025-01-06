@@ -40,4 +40,9 @@ export class AuthController {
 
     return tokens;
   }
+
+  @MessagePattern('validate_token')
+  async logout(@Payload() accessToken: string) {
+    return await this.authService.validateToken(accessToken);
+  }
 }

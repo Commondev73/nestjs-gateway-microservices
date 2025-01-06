@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   CanActivate,
   Inject,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
@@ -13,12 +14,17 @@ import { Observable } from 'rxjs';
 import { IS_PUBLIC_KEY } from 'src/common/decorators/public.decorator';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class AuthGuard implements CanActivate, OnModuleInit {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authServiceClient: ClientKafka,
     private readonly configService: ConfigService,
     private readonly reflector: Reflector,
   ) {}
+
+  async onModuleInit() {
+    this.authServiceClient.subscribeToResponseOf('validate_token');
+    await this.authServiceClient.connect();
+  }
 
   canActivate(
     context: ExecutionContext,
@@ -33,23 +39,24 @@ export class AuthGuard implements CanActivate {
     }
 
     const request: Request = context.switchToHttp().getRequest();
-    const token =
+    const accessToken =
       request.cookies[
         this.configService.get<string>('COOKIE_ACCESS_TOKEN_NAME')
       ];
 
-    if (!token) {
+    if (!accessToken) {
       throw new UnauthorizedException('No token provided');
     }
 
-    return this.validateToken(token);
+    return this.validateToken(accessToken);
   }
 
-  async validateToken(token: string): Promise<boolean> {
+  async validateToken(accessToken: string): Promise<boolean> {
     try {
       const isValid = await this.authServiceClient
-        .send<boolean>('validate_token', { token })
+        .send<boolean>('validate_token', accessToken)
         .toPromise();
+
       if (!isValid) {
         throw new UnauthorizedException('Invalid token');
       }
