@@ -7,7 +7,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './all-exceptions/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions: {
+      // if you want to use SSL
+      // ca: fs.readFileSync('path/to/your/ssl/ca.pem'),
+      // key: fs.readFileSync('path/to/your/ssl/key.pem'),
+      // cert: fs.readFileSync('path/to/your/ssl/cert.pem'),
+    },
+  });
 
   const configService = app.get(ConfigService);
 
@@ -23,13 +30,14 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [''],
+    origin: ['*'],
+    methods: 'GET,HEAD,PUT,POST,DELETE',
     credentials: true,
   });
 
   // Cookie parser
   app.use(cookieParser());
-  
+
   // Global Filters Exceptions
   app.useGlobalFilters(new AllExceptionsFilter());
 

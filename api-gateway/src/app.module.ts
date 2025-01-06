@@ -6,6 +6,7 @@ import { AuthGuard } from './auth/guard/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,6 +18,12 @@ import { UserModule } from './user/user.module';
         '.env',
       ],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 1 * 60 * 1000, // 1 minute
+        limit: 20,
+      },
+    ]),
     AuthModule,
     UserModule,
   ],
@@ -24,3 +31,4 @@ import { UserModule } from './user/user.module';
   providers: [{ provide: APP_GUARD, useClass: AuthGuard }, AppService],
 })
 export class AppModule {}
+
