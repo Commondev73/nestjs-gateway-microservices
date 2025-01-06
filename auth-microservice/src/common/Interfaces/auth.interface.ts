@@ -4,7 +4,7 @@ export interface AuthJwtToken {
 }
 
 export interface AuthUser {
-  _id: string;
+  id: string;
   name: string;
   username: string;
 }

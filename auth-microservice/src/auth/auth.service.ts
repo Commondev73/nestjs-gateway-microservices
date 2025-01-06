@@ -33,7 +33,7 @@ export class AuthService implements OnModuleInit {
    */
   async generateAccessToken(user: AuthUser): Promise<string> {
     try {
-      const payload = { username: user.name, sub: user._id };
+      const payload = { username: user.name, sub: user.id };
 
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
@@ -55,7 +55,7 @@ export class AuthService implements OnModuleInit {
    */
   async generateRefreshToken(user: AuthUser): Promise<string> {
     try {
-      const payload = { username: user.name, sub: user._id };
+      const payload = { username: user.name, sub: user.id };
 
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
