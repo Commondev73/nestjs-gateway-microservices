@@ -18,7 +18,7 @@ import { AuthGuard } from './guard/auth.guard';
               brokers: [configService.get<string>('KAFKA_BROKER')],
             },
             consumer: {
-              groupId: configService.get<string>('KAFKA_GROUP_ID'),
+              groupId: configService.get<string>('KAFKA_AUTH_SERVICE_GROUP_GROUP_ID'),
             },
           },
         }),

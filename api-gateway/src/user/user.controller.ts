@@ -30,21 +30,22 @@ export class UserController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' }) 
+  @ApiOperation({ summary: 'Get user by ID' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async getById(@Param('id') id: string) {
     return await this.userService.getById(id);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update user by ID' }) @ApiParam({ name: 'id', description: 'User ID' }) 
+  @ApiOperation({ summary: 'Update user by ID' })
+  @ApiParam({ name: 'id', description: 'User ID' })
   @ApiBody({ description: 'Updated user data', type: UserUpdateDto })
   async update(@Param('id') id: string, @Body() body: UserUpdateDto) {
     return await this.userService.update(id, body);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete user by ID' }) 
+  @ApiOperation({ summary: 'Delete user by ID' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async delete(@Param('id') id: string) {
     return await this.userService.delete(id);
