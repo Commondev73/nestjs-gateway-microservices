@@ -1,8 +1,6 @@
 import {
-  HttpException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   OnModuleInit,
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
