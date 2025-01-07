@@ -14,6 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           transport: Transport.KAFKA,
           options: {
             client: {
+              clientId: configService.get<string>('KAFKA_CLIENT_ID'),
               brokers: [configService.get<string>('KAFKA_BROKER')],
             },
             consumer: {

@@ -15,6 +15,7 @@ import { AuthGuard } from './guard/auth.guard';
           transport: Transport.KAFKA,
           options: {
             client: {
+              clientId: configService.get<string>('KAFKA_CLIENT_ID'),
               brokers: [configService.get<string>('KAFKA_BROKER')],
             },
             consumer: {

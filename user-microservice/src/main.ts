@@ -12,7 +12,9 @@ async function bootstrap() {
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.KAFKA,
     options: {
-      client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+      client: { 
+        clientId : configService.get<string>('KAFKA_CLIENT_ID'),
+        brokers: [configService.get<string>('KAFKA_BROKER')] },
       consumer: { groupId: configService.get<string>('KAFKA_GROUP_ID') },
     },
   };
