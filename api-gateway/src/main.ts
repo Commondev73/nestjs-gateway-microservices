@@ -7,14 +7,17 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AllExceptionsFilter } from './all-exceptions/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    httpsOptions: {
-      // if you want to use SSL
-      // ca: fs.readFileSync('path/to/your/ssl/ca.pem'),
-      // key: fs.readFileSync('path/to/your/ssl/key.pem'),
-      // cert: fs.readFileSync('path/to/your/ssl/cert.pem'),
-    },
-  });
+  // if you want to use SSL
+  //
+  // const httpsOptions = {
+  //   ca: fs.readFileSync('path/to/your/ssl/ca.pem'),
+  //   key: fs.readFileSync('path/to/your/ssl/key.pem'),
+  //   cert: fs.readFileSync('path/to/your/ssl/cert.pem'),
+  // };
+  //
+  // const app = await NestFactory.create(AppModule, { httpsOptions });
+
+  const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
 
