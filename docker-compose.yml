@@ -1,10 +1,12 @@
 version: '3'
 
 networks:
-  kafka-networks:
+  kafka-network:
     driver: bridge
-  db-networks:
-    driver: bridge  
+  db-network:
+    driver: bridge 
+  cache-network:
+    driver: bridge    
 
 services:
   zookeeper:
@@ -15,7 +17,7 @@ services:
     ports:
       - "2181:2181"
     networks:
-      - kafka-networks
+      - kafka-network
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -32,7 +34,7 @@ services:
       - "9092:9092"
       - "9093:9093"
     networks:
-      - kafka-networks
+      - kafka-network
 
   # kafka-ui
   kafdrop:
@@ -45,7 +47,7 @@ services:
     ports:
       - "9000:9000"  
     networks:
-      - kafka-networks
+      - kafka-network
 
   mongo:
     image: mongo
@@ -55,7 +57,7 @@ services:
     ports:
       - 27017:27017
     networks:
-      - db-network  
+      - db-network
 
   # mongo-ui
   mongo-express:
@@ -68,4 +70,28 @@ services:
     ports:
       - 8081:8081
     networks:
-      - db-network 
+      - db-network
+
+  redis:
+    image: redis:latest
+    environment:
+      - REDIS_PASSWORD=root
+    command: redis-server --requirepass root
+    ports:
+      - "6379:6379"
+    networks:
+      - cache-network
+
+  #redis-ui
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=root
+    ports:
+      - "8090:8081"
+    networks:
+      - cache-network
