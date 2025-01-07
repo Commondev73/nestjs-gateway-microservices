@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { UserModule } from './user/user.module';
         '.env',
       ],
     }), //  Make ConfigModule a module that can be used throughout the application.
-    DatabaseModule, 
+    DatabaseModule,
+    RedisModule,
     UserModule,
   ],
   controllers: [AppController],

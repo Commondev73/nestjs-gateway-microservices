@@ -6,11 +6,25 @@ import { Model } from 'mongoose';
 import { UserCreateDto, UserUpdateDto } from './user.dto';
 import { UserWithoutPassword } from 'src/common/Interfaces/user.interface';
 import { RpcException } from '@nestjs/microservices';
+import { RedisService } from 'src/redis/redis.service';
+import { REDIS_KEYS } from 'src/redis/cache.keys';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<User>,
+    private redisService: RedisService,
+  ) {}
 
+  private async cacheUser(user: User): Promise<void> {
+    await this.redisService.set(REDIS_KEYS.USER(user.id), user, 3600);
+  }
+  private async getCachedUser(id: string): Promise<User | null> {
+    return this.redisService.get(REDIS_KEYS.USER(id));
+  }
+  private async invalidateCache(id: string): Promise<void> {
+    await this.redisService.del(REDIS_KEYS.USER(id));
+  }
   /**
    * Creates a new user in the database.
    *
@@ -42,6 +56,9 @@ export class UserService {
 
       const createdUser = new this.userModel(user);
       const savedUser = await createdUser.save();
+
+      // cache user
+      await this.cacheUser(savedUser);
 
       return this.removePassword(savedUser.toObject());
     } catch (error) {
@@ -83,14 +100,23 @@ export class UserService {
    */
   async findOne(id: string): Promise<UserWithoutPassword> {
     try {
-      const user = await this.userModel.findById(id).exec();
+      // check cache
+      const cachedUser = await this.getCachedUser(id);
+      if (cachedUser) {
+        return this.removePassword(cachedUser);
+      }
 
+      // find user
+      const user = await this.userModel.findById(id).exec();
       if (!user) {
         throw new RpcException({
           message: 'User not found',
           status: HttpStatus.NOT_FOUND,
         });
       }
+
+      // cache user
+      await this.cacheUser(user);
 
       return this.removePassword(user.toObject());
     } catch (error) {
@@ -118,8 +144,8 @@ export class UserService {
     password: string,
   ): Promise<UserWithoutPassword> {
     try {
+      // find user
       const user = await this.userModel.findOne({ username }).exec();
-
       if (!user) {
         throw new RpcException({
           message: 'Invalid credentials',
@@ -127,8 +153,8 @@ export class UserService {
         });
       }
 
+      // validate password
       const isPasswordValid = await bcrypt.compare(password, user.password);
-
       if (!isPasswordValid) {
         throw new RpcException({
           message: 'Invalid credentials',
@@ -162,16 +188,19 @@ export class UserService {
     userUpdateDto: UserUpdateDto,
   ): Promise<UserWithoutPassword> {
     try {
+      // find user and update
       const updatedUser = await this.userModel
         .findByIdAndUpdate(id, userUpdateDto, { new: true })
         .exec();
-
       if (!updatedUser) {
         throw new RpcException({
           message: 'User not found',
           status: HttpStatus.NOT_FOUND,
         });
       }
+
+      // cache user
+      await this.cacheUser(updatedUser);
 
       return this.removePassword(updatedUser.toObject());
     } catch (error) {
@@ -195,14 +224,17 @@ export class UserService {
    */
   async delete(id: string): Promise<void> {
     try {
+      // find user and delete
       const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
-
       if (!deletedUser) {
         throw new RpcException({
           message: 'User not found',
           status: HttpStatus.NOT_FOUND,
         });
       }
+
+      // invalidate cache
+      await this.invalidateCache(id);
     } catch (error) {
       if (error instanceof RpcException) {
         throw error;
