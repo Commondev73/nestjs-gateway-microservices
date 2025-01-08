@@ -106,7 +106,7 @@ services:
     build:
       context: ./api-gateway
       dockerfile: Dockerfile
-      target: prod # prod or dev
+      target: dev # prod or dev
     depends_on:
       - kafka  
     environment:
