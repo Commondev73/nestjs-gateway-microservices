@@ -102,28 +102,6 @@ services:
     networks:
       - cache-network
 
-  gateway:
-    build:
-      context: ./api-gateway
-      dockerfile: Dockerfile
-      target: dev # prod or dev
-    depends_on:
-      - kafka  
-    environment:
-      - APP_PORT=3000
-      - COOKIE_ACCESS_TOKEN_NAME=accessToken
-      - COOKIE_REFRESH_TOKEN_NAME=refreshToken 
-      - KAFKA_BROKER=kafka:9093
-      - KAFKA_CLIENT_ID=api-gateway 
-      - KAFKA_GROUP_ID=api-gateway-consumer
-      - KAFKA_AUTH_SERVICE_GROUP_ID=auth-gateway-consumer
-      - KAFKA_USER_SERVICE_GROUP_ID=user-gateway-consumer
-    ports:
-      - "3000:3000"
-    networks:
-      - gateway-network
-      - kafka-network
-
   auth-service:
     build:
       context: ./auth-microservice
@@ -168,6 +146,31 @@ services:
       - gateway-network
       - kafka-network
       - cache-network
-      - db-network      
+      - db-network
+
+  gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+      target: dev # prod or dev
+    depends_on:
+      - kafka 
+      - auth-service 
+      - user-service
+    environment:
+      - APP_PORT=3000
+      - COOKIE_ACCESS_TOKEN_NAME=accessToken
+      - COOKIE_REFRESH_TOKEN_NAME=refreshToken 
+      - KAFKA_BROKER=kafka:9093
+      - KAFKA_CLIENT_ID=api-gateway 
+      - KAFKA_GROUP_ID=api-gateway-consumer
+      - KAFKA_AUTH_SERVICE_GROUP_ID=auth-gateway-consumer
+      - KAFKA_USER_SERVICE_GROUP_ID=user-gateway-consumer
+    ports:
+      - "3000:3000"
+    networks:
+      - gateway-network
+      - kafka-network
+          
 
 
