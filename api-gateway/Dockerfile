@@ -19,14 +19,16 @@ FROM node:22-alpine AS dev
 
 ENV NODE_ENV=development
 
-# Create a non-root user and set the working directory
-RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
-USER nestjs:nestjs
 WORKDIR /app
 
 COPY --from=build /app ./
 
 RUN npm ci --only=development
+
+# Create a non-root user and set the working directory
+RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
+RUN chown -R nestjs:nestjs /app
+USER nestjs:nestjs
 
 EXPOSE 3000
 
@@ -39,14 +41,16 @@ FROM node:22-alpine AS prod
 
 ENV NODE_ENV=production
 
-# Create a non-root user and set the working directory
-RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
-USER nestjs:nestjs
 WORKDIR /app
 
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
+
+# Create a non-root user and set the working directory
+RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
+RUN chown -R nestjs:nestjs /app
+USER nestjs:nestjs
 
 EXPOSE 3000
 
