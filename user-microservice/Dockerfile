@@ -1,6 +1,8 @@
 # Stage 1: Build the application
 FROM node:22-alpine AS build
 
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -15,6 +17,9 @@ RUN npm run build
 
 # Stage 2: Development stage
 FROM node:22-alpine AS dev
+
+ENV NODE_ENV=development
+
 # Create a non-root user and set the working directory
 RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
 USER nestjs:nestjs
@@ -30,6 +35,9 @@ CMD ["npm", "run", "start:dev"]
 
 # Stage 3: Production stage
 FROM node:22-alpine AS prod
+
+ENV NODE_ENV=production
+
 # Create a non-root user and set the working directory
 RUN addgroup -S nestjs && adduser -S nestjs -G nestjs
 USER nestjs:nestjs

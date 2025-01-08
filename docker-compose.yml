@@ -1,6 +1,8 @@
 version: '3'
 
 networks:
+  gateway-network:
+    driver: bridge 
   kafka-network:
     driver: bridge
   db-network:
@@ -95,3 +97,65 @@ services:
       - "8090:8081"
     networks:
       - cache-network
+
+  gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+      target: prod # prod or dev
+    environment:
+      - APP_PORT=3000
+      - COOKIE_ACCESS_TOKEN_NAME=accessToken
+      - COOKIE_REFRESH_TOKEN_NAME=refreshToken 
+      - KAFKA_BROKER=kafka:9093
+      - KAFKA_CLIENT_ID=api-gateway 
+      - KAFKA_GROUP_ID=api-gateway-consumer
+      - KAFKA_AUTH_SERVICE_GROUP_ID=auth-gateway-consumer
+      - KAFKA_USER_SERVICE_GROUP_ID=user-gateway-consumer
+    ports:
+      - "3000:3000"
+    networks:
+      - gateway-network
+      - kafka-network
+
+  auth-service:
+    build:
+      context: ./auth-microservice
+      dockerfile: Dockerfile
+      target: prod # prod or dev
+    environment:
+      - JWT_SECRET=auth-service-consumer
+      - JWT_ACCESS_TOKEN_EXPIRES=15m
+      - JWT_REFRESH_TOKEN_EXPIRES=30m 
+      - KAFKA_BROKER=kafka:9093
+      - KAFKA_CLIENT_ID=auth-microservice
+      - KAFKA_GROUP_ID=auth-service-consumer
+    networks:
+      - gateway-network
+      - kafka-network  
+
+  user-service:
+    build:
+      context: ./user-microservice
+      dockerfile: Dockerfile
+      target: prod # prod or dev
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=root
+      - MONGO_DATABASE=user
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=root
+      - REDIS_DB=0
+      - KAFKA_BROKER=kafka:9093 
+      - KAFKA_CLIENT_ID=user-microservice
+      - KAFKA_GROUP_ID=user-service-consumer
+    networks:
+      - gateway-network
+      - kafka-network
+      - cache-network
+      - db-network      
+
+
