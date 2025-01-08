@@ -7,6 +7,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
+RUN npm install -g @nestjs/cli
 RUN npm ci
 
 COPY . .
@@ -51,4 +52,4 @@ COPY --from=build /app/node_modules ./node_modules
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["npm", "run", "start:prod"]
