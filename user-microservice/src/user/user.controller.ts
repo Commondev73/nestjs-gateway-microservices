@@ -35,9 +35,9 @@ export class UserController {
 
   @MessagePattern('user_update')
   async update(
-    @Payload() data: { id: string; userUpdateDto: UserUpdateDto },
+    @Payload() data: { id: string } & UserUpdateDto,
   ): Promise<UserWithoutPassword> {
-    return await this.userService.update(data.id, data.userUpdateDto);
+    return await this.userService.update(data.id, data);
   }
 
   @MessagePattern('user_delete')
