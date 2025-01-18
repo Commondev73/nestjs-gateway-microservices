@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthGuard } from './guard/auth.guard';
 
 @Module({
   imports: [
@@ -13,9 +14,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.KAFKA,
           options: {
-            client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+            client: {
+              clientId: configService.get<string>('KAFKA_CLIENT_ID'),
+              brokers: [configService.get<string>('KAFKA_BROKER')],
+            },
             consumer: {
-              groupId: configService.get<string>('KAFKA_CONSUMER_GROUP'),
+              groupId: configService.get<string>('KAFKA_AUTH_SERVICE_GROUP_ID'),
             },
           },
         }),
@@ -25,6 +29,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   ],
   exports: [ClientsModule],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, AuthGuard],
 })
 export class AuthModule {}

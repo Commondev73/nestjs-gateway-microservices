@@ -1,24 +1,28 @@
-import * as bcrypt from 'bcrypt';
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
-import { ClientKafka } from '@nestjs/microservices';
+import { ClientKafka, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { AuthLoginDto, AuthLRegisterDto } from './auth.dto';
+import { AuthLoginDto, AuthRegisterDto } from './auth.dto';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientKafka,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit() {
+    const replyTopics = ['user_create', 'user_validate_login', 'user_find_one'];
+
+    replyTopics.forEach((topic) =>
+      this.userServiceClient.subscribeToResponseOf(topic),
+    );
+
+    await this.userServiceClient.connect();
+  }
 
   /**
    * Generate Access Token
@@ -29,12 +33,16 @@ export class AuthService {
    */
   async generateAccessToken(user: AuthUser): Promise<string> {
     try {
-      const payload = { username: user.name, sub: user._id };
+      const payload = { username: user.name, sub: user.id };
+
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new InternalServerErrorException('Failed to generate token');
+      throw new RpcException({
+        message: 'Failed to generate access token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -47,14 +55,16 @@ export class AuthService {
    */
   async generateRefreshToken(user: AuthUser): Promise<string> {
     try {
-      const payload = { username: user.name, sub: user._id };
+      const payload = { username: user.name, sub: user.id };
+
       return this.jwtService.sign(payload, {
         expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES'),
       });
     } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to generate refresh token',
-      );
+      throw new RpcException({
+        message: 'Failed to generate refresh token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -74,7 +84,10 @@ export class AuthService {
       );
 
       if (!user) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new RpcException({
+          message: 'Invalid refresh token',
+          status: HttpStatus.UNAUTHORIZED,
+        });
       }
 
       const accessToken = await this.generateAccessToken(user);
@@ -82,10 +95,14 @@ export class AuthService {
 
       return { accessToken, refreshToken };
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof RpcException) {
         throw error;
       }
-      throw new InternalServerErrorException('Failed to refresh token');
+
+      throw new RpcException({
+        message: 'Failed to refresh token',
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+      });
     }
   }
 
@@ -93,31 +110,38 @@ export class AuthService {
    * Register
    *
    * @async
-   * @param {AuthLRegisterDto} authLRegisterDto
+   * @param {AuthRegisterDto} AuthRegisterDto
    * @returns {Promise<AuthUser>}
    */
-  async register(authLRegisterDto: AuthLRegisterDto): Promise<AuthUser> {
-    const newUser = await firstValueFrom<AuthUser>(
-      this.userServiceClient.send('user_create', authLRegisterDto),
-    );
+  async register(AuthRegisterDto: AuthRegisterDto): Promise<AuthUser> {
+    try {
+      const newUser = await firstValueFrom<AuthUser>(
+        this.userServiceClient.send('user_create', AuthRegisterDto),
+      );
 
-    return newUser;
+      return newUser;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
-  
   /**
-   * Validate User 
+   * Validate User
    *
    * @async
    * @param {AuthLoginDto} authLoginDto
    * @returns {Promise<AuthUser>}
    */
   async validateUser(authLoginDto: AuthLoginDto): Promise<AuthUser> {
-    const user = await firstValueFrom<AuthUser>(
-      this.userServiceClient.send('user_validate_login', authLoginDto),
-    );
+    try {
+      const user = await firstValueFrom<AuthUser>(
+        this.userServiceClient.send('user_validate_login', authLoginDto),
+      );
 
-    return user;
+      return user;
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   /**
@@ -130,6 +154,7 @@ export class AuthService {
   async validateToken(accessToken: string): Promise<boolean> {
     try {
       const decoded = this.jwtService.verify(accessToken);
+
       return !!decoded;
     } catch (error) {
       return false;

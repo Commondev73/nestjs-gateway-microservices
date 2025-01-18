@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   AuthLoginDto,
-  AuthLRegisterDto,
+  AuthRegisterDto,
   AuthRefreshTokenDto,
 } from './auth.dto';
 import { AuthJwtToken, AuthUser } from 'src/common/Interfaces/auth.interface';
@@ -14,9 +14,9 @@ export class AuthController {
 
   @MessagePattern('auth_register')
   async register(
-    @Payload() authLRegisterDto: AuthLRegisterDto,
+    @Payload() AuthRegisterDto: AuthRegisterDto,
   ): Promise<AuthUser> {
-    const user = await this.authService.register(authLRegisterDto);
+    const user = await this.authService.register(AuthRegisterDto);
     return user;
   }
 
@@ -39,5 +39,10 @@ export class AuthController {
     const tokens = await this.authService.refreshToken(refreshToken);
 
     return tokens;
+  }
+
+  @MessagePattern('validate_token')
+  async logout(@Payload() accessToken: string) {
+    return await this.authService.validateToken(accessToken);
   }
 }

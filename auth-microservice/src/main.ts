@@ -1,9 +1,9 @@
-import * as cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AllExceptionsFilter } from './all-exceptions/all-exceptions.filter';
+import { RpcValidationPipe } from './rpc-validation-pipe/rpc-validation-pipe.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,18 +12,26 @@ async function bootstrap() {
   const microserviceOptions: MicroserviceOptions = {
     transport: Transport.KAFKA,
     options: {
-      client: { brokers: [configService.get<string>('KAFKA_BROKER')] },
+      client: {
+        clientId: configService.get<string>('KAFKA_CLIENT_ID'),
+        brokers: [configService.get<string>('KAFKA_BROKER')],
+      },
       consumer: { groupId: configService.get<string>('KAFKA_GROUP_ID') },
     },
   };
 
-  app.connectMicroservice<MicroserviceOptions>(microserviceOptions);
+  const microserviceApp =
+    await NestFactory.createMicroservice<MicroserviceOptions>(
+      AppModule,
+      microserviceOptions,
+    );
 
   // Global validation DTO (Data Transfer Object)
-  app.useGlobalPipes(new ValidationPipe());
+  microserviceApp.useGlobalPipes(new RpcValidationPipe());
 
-  await app.startAllMicroservices();
+  // Global Filters Exceptions
+  microserviceApp.useGlobalFilters(new AllExceptionsFilter());
 
-  await app.listen(configService.get<number>('APP_PORT') ?? 3001);
+  await microserviceApp.listen();
 }
 bootstrap();

@@ -9,35 +9,35 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @MessagePattern('user_create')
-  create(
+  async create(
     @Payload() userCreateDto: UserCreateDto,
   ): Promise<UserWithoutPassword> {
-    return this.userService.create(userCreateDto);
+    return await this.userService.create(userCreateDto);
   }
 
   @MessagePattern('user_find_all')
-  findAll(): Promise<UserWithoutPassword[]> {
-    return this.userService.findAll();
+  async findAll(): Promise<UserWithoutPassword[]> {
+    return await this.userService.findAll();
   }
 
   @MessagePattern('user_find_one')
-  findOne(@Payload() id: string): Promise<UserWithoutPassword> {
-    return this.userService.findOne(id);
+  async findOne(@Payload() id: string): Promise<UserWithoutPassword> {
+    return await this.userService.findOne(id);
   }
 
   @MessagePattern('user_validate_login')
-  validateLogin(
+  async validateLogin(
     @Payload() userValidateLoginDto: UserValidateLoginDto,
   ): Promise<UserWithoutPassword> {
     const { username, password } = userValidateLoginDto;
-    return this.userService.validateUser(username, password);
+    return await this.userService.validateUser(username, password);
   }
 
   @MessagePattern('user_update')
   async update(
-    @Payload() data: { id: string; userUpdateDto: UserUpdateDto },
+    @Payload() data: { id: string } & UserUpdateDto,
   ): Promise<UserWithoutPassword> {
-    return this.userService.update(data.id, data.userUpdateDto);
+    return await this.userService.update(data.id, data);
   }
 
   @MessagePattern('user_delete')
