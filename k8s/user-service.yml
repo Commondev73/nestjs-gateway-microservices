@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: pisitchai1994/user-microservice-nest:latest
+        image: commondev73/user-microservice-nest:latest
         env:
         - name: MONGO_HOST
           value: "mongo-mongodb.mongo.svc.cluster.local"

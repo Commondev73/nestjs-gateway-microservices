@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: auth-service
-        image: pisitchai1994/auth-microservice-nest:latest
+        image: commondev73/auth-microservice-nest:latest
         env:
         - name: JWT_SECRET
           value: "auth-service-consumer"
