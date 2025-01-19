@@ -1,0 +1,176 @@
+version: '3'
+
+name: api_gateway
+
+networks:
+  gateway-network:
+    driver: bridge 
+  kafka-network:
+    driver: bridge
+  db-network:
+    driver: bridge 
+  cache-network:
+    driver: bridge    
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_LOCAL://localhost:9092,LISTENER_DOCKER://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_LOCAL:PLAINTEXT,LISTENER_DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_LOCAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    networks:
+      - kafka-network
+
+  # kafka-ui
+  kafdrop:
+    image: 'obsidiandynamics/kafdrop'
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER_CONNECT: "kafka:9093"
+      JVM_OPTS: "-Xms32M -Xmx64M"
+    ports:
+      - "9000:9000"  
+    networks:
+      - kafka-network
+
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    networks:
+      - db-network
+
+  # mongo-ui
+  mongo-express:
+    image: mongo-express
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+      ME_CONFIG_BASICAUTH: false
+    ports:
+      - 8081:8081
+    networks:
+      - db-network
+
+  redis:
+    image: redis:latest
+    environment:
+      - REDIS_PASSWORD=root
+    command: redis-server --requirepass root
+    ports:
+      - "6379:6379"
+    networks:
+      - cache-network
+
+  #redis-ui
+  redis-commander:
+    depends_on:
+      - redis
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=root
+    ports:
+      - "8090:8081"
+    networks:
+      - cache-network
+
+  auth-service:
+    build:
+      context: ./auth-microservice
+      dockerfile: Dockerfile
+      target: prod # prod or dev
+    depends_on:
+      - kafka    
+    environment:
+      - JWT_SECRET=auth-service-consumer
+      - JWT_ACCESS_TOKEN_EXPIRES=15m
+      - JWT_REFRESH_TOKEN_EXPIRES=30m 
+      - KAFKA_BROKER=kafka:9093
+      - KAFKA_CLIENT_ID=auth-microservice
+      - KAFKA_GROUP_ID=auth-service-consumer
+    networks:
+      - gateway-network
+      - kafka-network  
+
+  user-service:
+    build:
+      context: ./user-microservice
+      dockerfile: Dockerfile
+      target: prod # prod or dev
+    depends_on:
+      - kafka
+      - redis 
+      - mongo    
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_USERNAME=root
+      - MONGO_PASSWORD=root
+      - MONGO_DATABASE=user
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=root
+      - REDIS_DB=0
+      - KAFKA_BROKER=kafka:9093 
+      - KAFKA_CLIENT_ID=user-microservice
+      - KAFKA_GROUP_ID=user-service-consumer
+    networks:
+      - gateway-network
+      - kafka-network
+      - cache-network
+      - db-network
+
+  gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+      target: dev # prod or dev
+    depends_on:
+      - kafka 
+      - auth-service 
+      - user-service
+    environment:
+      - APP_PORT=3000
+      - COOKIE_ACCESS_TOKEN_NAME=accessToken
+      - COOKIE_REFRESH_TOKEN_NAME=refreshToken 
+      - KAFKA_BROKER=kafka:9093
+      - KAFKA_CLIENT_ID=api-gateway 
+      - KAFKA_GROUP_ID=api-gateway-consumer
+      - KAFKA_AUTH_SERVICE_GROUP_ID=auth-gateway-consumer
+      - KAFKA_USER_SERVICE_GROUP_ID=user-gateway-consumer
+    ports:
+      - "3000:3000"
+    networks:
+      - gateway-network
+      - kafka-network
+          
+
+

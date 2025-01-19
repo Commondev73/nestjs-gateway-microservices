@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: commondev73/api-gateway-nest:dev
+        ports:
+        - containerPort: 3000
+        env:
+        - name: APP_PORT
+          value: "3000"
+        - name: COOKIE_ACCESS_TOKEN_NAME
+          value: "accessToken"
+        - name: COOKIE_REFRESH_TOKEN_NAME
+          value: "refreshToken"
+        - name: KAFKA_BROKER
+          value: "kafka.kafka.svc.cluster.local:9092"
+        - name: KAFKA_CLIENT_ID
+          value: "api-gateway"
+        - name: KAFKA_GROUP_ID
+          value: "api-gateway-consumer"
+        - name: KAFKA_AUTH_SERVICE_GROUP_ID
+          value: "auth-gateway-consumer"
+        - name: KAFKA_USER_SERVICE_GROUP_ID
+          value: "user-gateway-consumer"
+ 
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: api-gateway
+spec:
+  ports:
+  - port: 3000
+    targetPort: 3000
+  selector:
+    app: gateway
+  type: ClusterIP
