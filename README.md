@@ -132,13 +132,13 @@ helm repo update
 **Local Testing:**
 
 ```sh
-helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka --namespace kafka --create-namespace --set kafka.config.auto.create.topics.enable=true --set auth.enabled=false --set listeners.client.protocol=PLAINTEXT,listeners.controller.protocol=PLAINTEXT --set replicaCount=1 --set controller.replicaCount=1 --set controller.replicas=1
+helm install kafka bitnami/kafka --namespace kafka --create-namespace --set kafka.config.auto.create.topics.enable=true --set auth.enabled=false --set listeners.client.protocol=PLAINTEXT,listeners.controller.protocol=PLAINTEXT --set kafka.config."num.partitions"=3
 ```
 
 **Advanced Setup:**
 
 ```sh
-helm install kafka oci://registry-1.docker.io/bitnamicharts/kafka --namespace kafka --create-namespace -f kafka/values.yaml
+helm install kafka bitnami/kafka --namespace kafka --create-namespace -f kafka/values.yaml
 ```
 
 #### Install Redis
@@ -176,3 +176,6 @@ kubectl apply -f k8s/namespace.yml
 
 kubectl apply -f k8s/
 ```
+
+#### Access the service
+   - Open a web browser or use a tool like `curl` to access the `gateway` service via the `localhost\api` host.
