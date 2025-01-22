@@ -13,19 +13,29 @@ spec:
       labels:
         app: auth-service
     spec:
+      initContainers:
+        - name: wait-for-user-service
+          image: bitnami/kubectl:latest
+          command: [
+              "sh",
+              "-c",
+              '
+              while [ -z "$(kubectl get pods -n api-gateway -l app=user-service -o jsonpath="{.items}")" ]; do echo Waiting for user-service pod to appear; sleep 30; done;
+              while [ "$(kubectl get pods -n api-gateway -l app=user-service -o jsonpath="{.items[0].status.phase}")" != "Running" ]; do echo Waiting for user-service; sleep 30; done',
+            ]  
       containers:
-      - name: auth-service
-        image: commondev73/auth-microservice-nest:latest
-        env:
-        - name: JWT_SECRET
-          value: "auth-service-consumer"
-        - name: JWT_ACCESS_TOKEN_EXPIRES
-          value: "15m"
-        - name: JWT_REFRESH_TOKEN_EXPIRES
-          value: "30m"
-        - name: KAFKA_BROKER
-          value: "kafka.kafka.svc.cluster.local:9092"
-        - name: KAFKA_CLIENT_ID
-          value: "auth-microservice"
-        - name: KAFKA_GROUP_ID
-          value: "auth-service-consumer"
+        - name: auth-service
+          image: commondev73/auth-microservice-nest:latest
+          env:
+            - name: JWT_SECRET
+              value: "auth-service-consumer"
+            - name: JWT_ACCESS_TOKEN_EXPIRES
+              value: "15m"
+            - name: JWT_REFRESH_TOKEN_EXPIRES
+              value: "30m"
+            - name: KAFKA_BROKER
+              value: "kafka.kafka.svc.cluster.local:9092"
+            - name: KAFKA_CLIENT_ID
+              value: "auth-microservice"
+            - name: KAFKA_GROUP_ID
+              value: "auth-service-consumer"
