@@ -178,4 +178,5 @@ kubectl apply -f k8s/
 ```
 
 #### Access the service
-   - Open a web browser or use a tool like `curl` to access the `gateway` service via the `localhost\api` host.
+   - Open a web browser or use a tool like `curl` to access the `gateway` service via the `localhost` host.
+   - Api documents `localhost\api`
